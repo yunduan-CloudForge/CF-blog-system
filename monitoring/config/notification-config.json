@@ -1,0 +1,200 @@
+{
+  "notification_channels": {
+    "email": {
+      "enabled": true,
+      "smtp_server": "smtp.gmail.com",
+      "smtp_port": 587,
+      "username": "${SMTP_USERNAME}",
+      "password": "${SMTP_PASSWORD}",
+      "from_address": "blog-system-alerts@example.com",
+      "from_name": "Blog System Monitoring",
+      "use_tls": true,
+      "timeout_seconds": 30,
+      "retry_attempts": 3,
+      "retry_delay_seconds": 5
+    },
+    "slack": {
+      "enabled": false,
+      "webhook_url": "${SLACK_WEBHOOK_URL}",
+      "channel": "#alerts",
+      "username": "Blog System Bot",
+      "icon_emoji": ":warning:",
+      "timeout_seconds": 10,
+      "retry_attempts": 2
+    },
+    "discord": {
+      "enabled": false,
+      "webhook_url": "${DISCORD_WEBHOOK_URL}",
+      "username": "Blog System Monitor",
+      "avatar_url": "",
+      "timeout_seconds": 10,
+      "retry_attempts": 2
+    },
+    "teams": {
+      "enabled": false,
+      "webhook_url": "${TEAMS_WEBHOOK_URL}",
+      "timeout_seconds": 15,
+      "retry_attempts": 2
+    },
+    "webhook": {
+      "enabled": false,
+      "url": "${CUSTOM_WEBHOOK_URL}",
+      "method": "POST",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer ${WEBHOOK_TOKEN}"
+      },
+      "timeout_seconds": 10,
+      "retry_attempts": 3
+    },
+    "sms": {
+      "enabled": false,
+      "provider": "twilio",
+      "account_sid": "${TWILIO_ACCOUNT_SID}",
+      "auth_token": "${TWILIO_AUTH_TOKEN}",
+      "from_number": "${TWILIO_FROM_NUMBER}",
+      "timeout_seconds": 30,
+      "retry_attempts": 2
+    }
+  },
+  "notification_rules": {
+    "critical": {
+      "channels": ["email", "sms", "slack"],
+      "immediate": true,
+      "escalation_delay_minutes": 5,
+      "max_escalations": 3,
+      "cooldown_minutes": 30,
+      "recipients": {
+        "email": ["admin@example.com", "devops@example.com"],
+        "sms": ["+1234567890"],
+        "slack": ["@admin", "@devops-team"]
+      }
+    },
+    "warning": {
+      "channels": ["email", "slack"],
+      "immediate": false,
+      "batch_delay_minutes": 15,
+      "escalation_delay_minutes": 30,
+      "max_escalations": 2,
+      "cooldown_minutes": 60,
+      "recipients": {
+        "email": ["team@example.com"],
+        "slack": ["#monitoring"]
+      }
+    },
+    "info": {
+      "channels": ["slack"],
+      "immediate": false,
+      "batch_delay_minutes": 60,
+      "escalation_delay_minutes": 0,
+      "max_escalations": 0,
+      "cooldown_minutes": 120,
+      "recipients": {
+        "slack": ["#general"]
+      }
+    }
+  },
+  "alert_templates": {
+    "email": {
+      "subject_template": "[{severity}] {service} Alert: {title}",
+      "body_template": "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset='utf-8'>\n    <title>Blog System Alert</title>\n    <style>\n        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }\n        .container { max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }\n        .header { padding: 20px; color: white; text-align: center; }\n        .header.critical { background-color: #dc3545; }\n        .header.warning { background-color: #ffc107; color: #212529; }\n        .header.info { background-color: #17a2b8; }\n        .content { padding: 20px; }\n        .alert-info { background-color: #f8f9fa; padding: 15px; border-radius: 4px; margin: 15px 0; }\n        .alert-info h3 { margin-top: 0; color: #495057; }\n        .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }\n        .metric { background-color: #e9ecef; padding: 10px; border-radius: 4px; text-align: center; }\n        .metric-value { font-size: 1.2em; font-weight: bold; color: #495057; }\n        .metric-label { font-size: 0.9em; color: #6c757d; }\n        .footer { padding: 20px; background-color: #f8f9fa; text-align: center; color: #6c757d; font-size: 0.9em; }\n        .button { display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px; margin: 10px 5px; }\n    </style>\n</head>\n<body>\n    <div class='container'>\n        <div class='header {severity}'>\n            <h1>{title}</h1>\n            <p>Service: {service} | Time: {timestamp}</p>\n        </div>\n        <div class='content'>\n            <div class='alert-info'>\n                <h3>Alert Details</h3>\n                <p><strong>Description:</strong> {description}</p>\n                <p><strong>Severity:</strong> {severity}</p>\n                <p><strong>Environment:</strong> {environment}</p>\n                <p><strong>Host:</strong> {hostname}</p>\n            </div>\n            {metrics_html}\n            <div class='alert-info'>\n                <h3>Recommended Actions</h3>\n                <ul>\n                    {actions_html}\n                </ul>\n            </div>\n            <div style='text-align: center; margin: 20px 0;'>\n                <a href='{grafana_url}' class='button'>View in Grafana</a>\n                <a href='{prometheus_url}' class='button'>View in Prometheus</a>\n            </div>\n        </div>\n        <div class='footer'>\n            <p>This alert was generated by Blog System Monitoring at {timestamp}</p>\n            <p>If you believe this is a false positive, please check the monitoring configuration.</p>\n        </div>\n    </div>\n</body>\n</html>"
+    },
+    "slack": {
+      "message_template": ":warning: *{severity}* Alert: {title}\n*Service:* {service}\n*Description:* {description}\n*Time:* {timestamp}\n*Environment:* {environment}\n*Host:* {hostname}\n\n*Metrics:*\n{metrics_text}\n\n*Actions:*\n{actions_text}\n\n<{grafana_url}|View in Grafana> | <{prometheus_url}|View in Prometheus>",
+      "color_map": {
+        "critical": "danger",
+        "warning": "warning",
+        "info": "good"
+      }
+    },
+    "discord": {
+      "embed_template": {
+        "title": "{severity} Alert: {title}",
+        "description": "{description}",
+        "color": "{color}",
+        "fields": [
+          {"name": "Service", "value": "{service}", "inline": true},
+          {"name": "Environment", "value": "{environment}", "inline": true},
+          {"name": "Host", "value": "{hostname}", "inline": true},
+          {"name": "Time", "value": "{timestamp}", "inline": false},
+          {"name": "Metrics", "value": "{metrics_text}", "inline": false},
+          {"name": "Actions", "value": "{actions_text}", "inline": false}
+        ],
+        "footer": {"text": "Blog System Monitoring"},
+        "timestamp": "{iso_timestamp}"
+      },
+      "color_map": {
+        "critical": 15158332,
+        "warning": 16776960,
+        "info": 3447003
+      }
+    }
+  },
+  "escalation_policies": {
+    "database_down": {
+      "severity": "critical",
+      "immediate_channels": ["email", "sms"],
+      "escalation_steps": [
+        {"delay_minutes": 5, "channels": ["slack"], "recipients": ["@dba-team"]},
+        {"delay_minutes": 15, "channels": ["email", "sms"], "recipients": ["manager@example.com", "+1234567891"]},
+        {"delay_minutes": 30, "channels": ["email"], "recipients": ["cto@example.com"]}
+      ]
+    },
+    "high_error_rate": {
+      "severity": "warning",
+      "immediate_channels": ["slack"],
+      "escalation_steps": [
+        {"delay_minutes": 15, "channels": ["email"], "recipients": ["dev-team@example.com"]},
+        {"delay_minutes": 60, "channels": ["email"], "recipients": ["lead@example.com"]}
+      ]
+    },
+    "performance_degradation": {
+      "severity": "warning",
+      "immediate_channels": ["slack"],
+      "escalation_steps": [
+        {"delay_minutes": 30, "channels": ["email"], "recipients": ["performance-team@example.com"]}
+      ]
+    }
+  },
+  "quiet_hours": {
+    "enabled": true,
+    "timezone": "UTC",
+    "start_time": "22:00",
+    "end_time": "08:00",
+    "days": ["monday", "tuesday", "wednesday", "thursday", "friday"],
+    "exceptions": {
+      "critical_always_notify": true,
+      "services": ["database", "authentication"],
+      "override_contacts": ["oncall@example.com"]
+    }
+  },
+  "rate_limiting": {
+    "enabled": true,
+    "max_alerts_per_service_per_hour": 10,
+    "max_alerts_per_channel_per_hour": 50,
+    "burst_protection": {
+      "enabled": true,
+      "max_alerts_per_minute": 5,
+      "cooldown_minutes": 10
+    }
+  },
+  "maintenance_mode": {
+    "enabled": false,
+    "start_time": "",
+    "end_time": "",
+    "affected_services": [],
+    "suppress_all_alerts": false,
+    "suppress_warning_and_info": true,
+    "notification_message": "System is under maintenance. Some alerts may be suppressed."
+  },
+  "health_check": {
+    "enabled": true,
+    "interval_minutes": 5,
+    "test_notifications": {
+      "enabled": false,
+      "schedule": "0 9 * * 1",
+      "channels": ["email"],
+      "recipients": ["admin@example.com"]
+    }
+  }
+}

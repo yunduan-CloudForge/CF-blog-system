@@ -1,0 +1,233 @@
+# Grafana Datasources Configuration for Blog System
+apiVersion: 1
+
+datasources:
+  # Prometheus - Main metrics datasource
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      httpMethod: POST
+      manageAlerts: true
+      prometheusType: Prometheus
+      prometheusVersion: 2.40.0
+      cacheLevel: 'High'
+      disableRecordingRules: false
+      incrementalQueryOverlapWindow: 10m
+      queryTimeout: 60s
+      timeInterval: 15s
+      exemplarTraceIdDestinations:
+        - name: trace_id
+          datasourceUid: jaeger
+    secureJsonData:
+      # Add authentication if needed
+      # httpHeaderValue1: 'Bearer token'
+    uid: prometheus
+    version: 1
+
+  # Loki - Logs datasource
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: true
+    jsonData:
+      maxLines: 1000
+      derivedFields:
+        - datasourceUid: jaeger
+          matcherRegex: "trace_id=(\\w+)"
+          name: TraceID
+          url: "$${__value.raw}"
+        - datasourceUid: prometheus
+          matcherRegex: "request_id=(\\w+)"
+          name: RequestID
+          url: "$${__value.raw}"
+      alertmanager:
+        handleGrafanaManagedAlerts: true
+        implementation: prometheus
+    uid: loki
+    version: 1
+
+  # Jaeger - Distributed tracing datasource
+  - name: Jaeger
+    type: jaeger
+    access: proxy
+    url: http://jaeger:16686
+    editable: true
+    jsonData:
+      tracesToLogs:
+        datasourceUid: loki
+        tags: ['job', 'instance', 'pod', 'namespace']
+        mappedTags: [{ key: 'service.name', value: 'service' }]
+        mapTagNamesEnabled: false
+        spanStartTimeShift: '1h'
+        spanEndTimeShift: '1h'
+        filterByTraceID: false
+        filterBySpanID: false
+      tracesToMetrics:
+        datasourceUid: prometheus
+        tags: [{ key: 'service.name', value: 'service' }, { key: 'job' }]
+        queries:
+          - name: 'Sample query'
+            query: 'sum(rate(traces_spanmetrics_latency_bucket{$$__tags}[5m]))'
+      nodeGraph:
+        enabled: true
+      search:
+        hide: false
+      spanBar:
+        type: 'Tag'
+        tag: 'http.path'
+    uid: jaeger
+    version: 1
+
+  # Elasticsearch - Alternative logs and metrics (if used)
+  - name: Elasticsearch
+    type: elasticsearch
+    access: proxy
+    url: http://elasticsearch:9200
+    database: "logstash-*"
+    editable: true
+    jsonData:
+      interval: Daily
+      timeField: "@timestamp"
+      esVersion: "7.10.0"
+      maxConcurrentShardRequests: 5
+      logMessageField: message
+      logLevelField: level
+      includeFrozen: false
+    uid: elasticsearch
+    version: 1
+
+  # InfluxDB - Time series database (if used for custom metrics)
+  - name: InfluxDB
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    database: blog_metrics
+    editable: true
+    jsonData:
+      version: InfluxQL
+      timeInterval: "15s"
+      httpMode: GET
+    secureJsonData:
+      # password: 'influxdb_password'
+    uid: influxdb
+    version: 1
+
+  # PostgreSQL - Direct database access for business metrics
+  - name: PostgreSQL
+    type: postgres
+    access: proxy
+    url: postgres:5432
+    database: blog_db
+    user: blog_user
+    editable: true
+    jsonData:
+      sslmode: disable
+      maxOpenConns: 100
+      maxIdleConns: 100
+      maxIdleConnsAuto: true
+      connMaxLifetime: 14400
+      postgresVersion: 1300
+      timescaledb: false
+    secureJsonData:
+      password: 'blog_password'
+    uid: postgresql
+    version: 1
+
+  # Redis - Cache metrics datasource
+  - name: Redis
+    type: redis-datasource
+    access: proxy
+    url: redis://redis:6379
+    editable: true
+    jsonData:
+      client: standalone
+      poolSize: 5
+      timeout: 10
+      pingInterval: 0
+      pipelineWindow: 0
+    secureJsonData:
+      # password: 'redis_password'
+    uid: redis
+    version: 1
+
+  # TestData - For testing and development
+  - name: TestData
+    type: testdata
+    access: proxy
+    editable: true
+    jsonData: {}
+    uid: testdata
+    version: 1
+
+  # CloudWatch - AWS monitoring (if deployed on AWS)
+  - name: CloudWatch
+    type: cloudwatch
+    access: proxy
+    editable: true
+    jsonData:
+      authType: default
+      defaultRegion: us-east-1
+      customMetricsNamespaces: 'BlogSystem,AWS/ApplicationELB,AWS/ECS'
+      assumeRoleArn: ''
+    secureJsonData:
+      # accessKey: 'AWS_ACCESS_KEY'
+      # secretKey: 'AWS_SECRET_KEY'
+    uid: cloudwatch
+    version: 1
+
+  # Azure Monitor - Azure monitoring (if deployed on Azure)
+  - name: Azure Monitor
+    type: grafana-azure-monitor-datasource
+    access: proxy
+    editable: true
+    jsonData:
+      azureAuthType: msi
+      subscriptionId: ''
+      tenantId: ''
+      clientId: ''
+      cloudName: azuremonitor
+    secureJsonData:
+      # clientSecret: 'AZURE_CLIENT_SECRET'
+    uid: azure-monitor
+    version: 1
+
+  # Google Cloud Monitoring - GCP monitoring (if deployed on GCP)
+  - name: Google Cloud Monitoring
+    type: stackdriver
+    access: proxy
+    editable: true
+    jsonData:
+      authenticationType: gce
+      defaultProject: 'blog-system-project'
+    secureJsonData:
+      # privateKey: 'GCP_SERVICE_ACCOUNT_KEY'
+    uid: google-cloud-monitoring
+    version: 1
+
+  # Mixed datasource for combining multiple sources
+  - name: Mixed
+    type: mixed
+    access: proxy
+    editable: false
+    uid: mixed
+    version: 1
+
+  # Annotations datasource
+  - name: Annotations
+    type: grafana
+    access: proxy
+    editable: false
+    uid: grafana
+    version: 1
+
+# Delete datasources that are not in this list
+deleteDatasources:
+  - name: 'Old Prometheus'
+    orgId: 1
+  - name: 'Old Loki'
+    orgId: 1

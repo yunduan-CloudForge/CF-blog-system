@@ -1,0 +1,305 @@
+# Prometheus 告警规则
+groups:
+  # 系统级别告警
+  - name: system.rules
+    rules:
+      # CPU 使用率过高
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          category: system
+        annotations:
+          summary: "高CPU使用率 (实例 {{ $labels.instance }})"
+          description: "CPU使用率已超过80%，当前值: {{ $value }}%"
+
+      # 内存使用率过高
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          category: system
+        annotations:
+          summary: "高内存使用率 (实例 {{ $labels.instance }})"
+          description: "内存使用率已超过85%，当前值: {{ $value }}%"
+
+      # 磁盘空间不足
+      - alert: LowDiskSpace
+        expr: (1 - (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"})) * 100 > 90
+        for: 5m
+        labels:
+          severity: critical
+          category: system
+        annotations:
+          summary: "磁盘空间不足 (实例 {{ $labels.instance }})"
+          description: "磁盘使用率已超过90%，当前值: {{ $value }}%，挂载点: {{ $labels.mountpoint }}"
+
+      # 磁盘IO等待时间过长
+      - alert: HighDiskIOWait
+        expr: irate(node_cpu_seconds_total{mode="iowait"}[5m]) * 100 > 20
+        for: 5m
+        labels:
+          severity: warning
+          category: system
+        annotations:
+          summary: "高磁盘IO等待 (实例 {{ $labels.instance }})"
+          description: "磁盘IO等待时间过长，当前值: {{ $value }}%"
+
+      # 系统负载过高
+      - alert: HighSystemLoad
+        expr: node_load15 / count by(instance) (node_cpu_seconds_total{mode="idle"}) > 1.5
+        for: 5m
+        labels:
+          severity: warning
+          category: system
+        annotations:
+          summary: "系统负载过高 (实例 {{ $labels.instance }})"
+          description: "15分钟平均负载过高，当前值: {{ $value }}"
+
+  # 容器级别告警
+  - name: container.rules
+    rules:
+      # 容器CPU使用率过高
+      - alert: ContainerHighCPU
+        expr: rate(container_cpu_usage_seconds_total{name!=""}[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          category: container
+        annotations:
+          summary: "容器CPU使用率过高 ({{ $labels.name }})"
+          description: "容器 {{ $labels.name }} CPU使用率过高，当前值: {{ $value }}%"
+
+      # 容器内存使用率过高
+      - alert: ContainerHighMemory
+        expr: (container_memory_usage_bytes{name!=""} / container_spec_memory_limit_bytes{name!=""}) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          category: container
+        annotations:
+          summary: "容器内存使用率过高 ({{ $labels.name }})"
+          description: "容器 {{ $labels.name }} 内存使用率过高，当前值: {{ $value }}%"
+
+      # 容器重启频繁
+      - alert: ContainerRestartingFrequently
+        expr: increase(container_start_time_seconds{name!=""}[1h]) > 3
+        for: 0m
+        labels:
+          severity: warning
+          category: container
+        annotations:
+          summary: "容器频繁重启 ({{ $labels.name }})"
+          description: "容器 {{ $labels.name }} 在过去1小时内重启了 {{ $value }} 次"
+
+      # 容器停止运行
+      - alert: ContainerDown
+        expr: container_last_seen{name!=""} < time() - 60
+        for: 5m
+        labels:
+          severity: critical
+          category: container
+        annotations:
+          summary: "容器已停止 ({{ $labels.name }})"
+          description: "容器 {{ $labels.name }} 已停止运行超过5分钟"
+
+  # 应用级别告警
+  - name: application.rules
+    rules:
+      # 应用服务不可用
+      - alert: ApplicationDown
+        expr: up{job="blog-system-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: application
+        annotations:
+          summary: "应用服务不可用 ({{ $labels.instance }})"
+          description: "应用服务 {{ $labels.instance }} 无法访问"
+
+      # HTTP响应时间过长
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          category: application
+        annotations:
+          summary: "HTTP响应时间过长"
+          description: "95%的HTTP请求响应时间超过2秒，当前值: {{ $value }}秒"
+
+      # HTTP错误率过高
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 5
+        for: 5m
+        labels:
+          severity: warning
+          category: application
+        annotations:
+          summary: "HTTP错误率过高"
+          description: "HTTP 5xx错误率超过5%，当前值: {{ $value }}%"
+
+      # 请求量异常下降
+      - alert: LowRequestRate
+        expr: rate(http_requests_total[5m]) < 0.1
+        for: 10m
+        labels:
+          severity: warning
+          category: application
+        annotations:
+          summary: "请求量异常下降"
+          description: "HTTP请求量异常下降，当前值: {{ $value }} req/s"
+
+  # 数据库告警
+  - name: database.rules
+    rules:
+      # PostgreSQL 服务不可用
+      - alert: PostgreSQLDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: database
+        annotations:
+          summary: "PostgreSQL服务不可用"
+          description: "PostgreSQL数据库无法连接"
+
+      # PostgreSQL 连接数过多
+      - alert: PostgreSQLTooManyConnections
+        expr: pg_stat_activity_count / pg_settings_max_connections * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "PostgreSQL连接数过多"
+          description: "PostgreSQL连接数使用率超过80%，当前值: {{ $value }}%"
+
+      # PostgreSQL 慢查询过多
+      - alert: PostgreSQLSlowQueries
+        expr: rate(pg_stat_activity_max_tx_duration[5m]) > 60
+        for: 5m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "PostgreSQL慢查询过多"
+          description: "PostgreSQL存在长时间运行的查询，最长事务时间: {{ $value }}秒"
+
+      # Redis 服务不可用
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: database
+        annotations:
+          summary: "Redis服务不可用"
+          description: "Redis缓存服务无法连接"
+
+      # Redis 内存使用率过高
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "Redis内存使用率过高"
+          description: "Redis内存使用率超过90%，当前值: {{ $value }}%"
+
+      # Redis 连接数过多
+      - alert: RedisTooManyConnections
+        expr: redis_connected_clients > 100
+        for: 5m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "Redis连接数过多"
+          description: "Redis连接数过多，当前值: {{ $value }}"
+
+  # 网络告警
+  - name: network.rules
+    rules:
+      # 网络连通性检查失败
+      - alert: EndpointDown
+        expr: probe_success == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: network
+        annotations:
+          summary: "端点不可达 ({{ $labels.instance }})"
+          description: "端点 {{ $labels.instance }} 无法访问"
+
+      # SSL证书即将过期
+      - alert: SSLCertificateExpiringSoon
+        expr: probe_ssl_earliest_cert_expiry - time() < 86400 * 7
+        for: 0m
+        labels:
+          severity: warning
+          category: network
+        annotations:
+          summary: "SSL证书即将过期 ({{ $labels.instance }})"
+          description: "SSL证书将在7天内过期，剩余时间: {{ $value }}秒"
+
+      # 网络延迟过高
+      - alert: HighNetworkLatency
+        expr: probe_duration_seconds > 1
+        for: 5m
+        labels:
+          severity: warning
+          category: network
+        annotations:
+          summary: "网络延迟过高 ({{ $labels.instance }})"
+          description: "网络延迟超过1秒，当前值: {{ $value }}秒"
+
+  # 监控系统自身告警
+  - name: monitoring.rules
+    rules:
+      # Prometheus 目标不可达
+      - alert: PrometheusTargetMissing
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: warning
+          category: monitoring
+        annotations:
+          summary: "Prometheus目标不可达 ({{ $labels.instance }})"
+          description: "Prometheus无法抓取目标 {{ $labels.instance }} 的指标"
+
+      # Prometheus 配置重载失败
+      - alert: PrometheusConfigurationReloadFailure
+        expr: prometheus_config_last_reload_successful != 1
+        for: 0m
+        labels:
+          severity: warning
+          category: monitoring
+        annotations:
+          summary: "Prometheus配置重载失败"
+          description: "Prometheus配置重载失败，请检查配置文件"
+
+      # Alertmanager 不可用
+      - alert: AlertmanagerDown
+        expr: up{job="alertmanager"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: monitoring
+        annotations:
+          summary: "Alertmanager不可用"
+          description: "Alertmanager服务无法访问"
+
+      # Grafana 不可用
+      - alert: GrafanaDown
+        expr: up{job="grafana"} == 0
+        for: 1m
+        labels:
+          severity: warning
+          category: monitoring
+        annotations:
+          summary: "Grafana不可用"
+          description: "Grafana服务无法访问"

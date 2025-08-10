@@ -1,0 +1,391 @@
+{
+  "deployment_strategy": {
+    "type": "blue_green",
+    "fallback_strategy": "rolling_update",
+    "health_check_timeout_seconds": 300,
+    "rollback_timeout_seconds": 180,
+    "pre_deployment_checks": true,
+    "post_deployment_validation": true
+  },
+  "blue_green_deployment": {
+    "enabled": true,
+    "switch_strategy": "load_balancer",
+    "traffic_split": {
+      "enabled": false,
+      "initial_percentage": 10,
+      "increment_percentage": 25,
+      "increment_interval_minutes": 5,
+      "rollback_on_error": true
+    },
+    "environment_config": {
+      "blue": {
+        "compose_file": "docker-compose.blue.yml",
+        "network": "blog-system_blue",
+        "service_suffix": "-blue",
+        "port_offset": 0
+      },
+      "green": {
+        "compose_file": "docker-compose.green.yml",
+        "network": "blog-system_green",
+        "service_suffix": "-green",
+        "port_offset": 1000
+      }
+    },
+    "load_balancer": {
+      "type": "traefik",
+      "config_file": "/etc/traefik/dynamic/blog-system.yml",
+      "switch_command": "docker exec traefik-container traefik-reload",
+      "health_check_path": "/health",
+      "health_check_interval_seconds": 10,
+      "unhealthy_threshold": 3
+    }
+  },
+  "rolling_update": {
+    "enabled": true,
+    "max_unavailable": 1,
+    "max_surge": 1,
+    "update_strategy": "one_by_one",
+    "wait_between_updates_seconds": 30,
+    "services_order": [
+      "blog-backend",
+      "blog-frontend",
+      "nginx"
+    ],
+    "parallel_updates": {
+      "enabled": false,
+      "max_parallel": 2,
+      "dependency_groups": [
+        ["blog-backend"],
+        ["blog-frontend", "nginx"]
+      ]
+    }
+  },
+  "canary_deployment": {
+    "enabled": false,
+    "canary_percentage": 5,
+    "promotion_stages": [5, 25, 50, 100],
+    "stage_duration_minutes": 10,
+    "success_criteria": {
+      "error_rate_threshold_percent": 1,
+      "response_time_threshold_ms": 2000,
+      "min_requests": 100
+    },
+    "automatic_promotion": false,
+    "rollback_on_failure": true
+  },
+  "pre_deployment_checks": {
+    "enabled": true,
+    "timeout_seconds": 120,
+    "checks": [
+      {
+        "name": "docker_health",
+        "type": "command",
+        "command": "docker system info",
+        "expected_exit_code": 0,
+        "required": true
+      },
+      {
+        "name": "disk_space",
+        "type": "command",
+        "command": "df -h / | awk 'NR==2 {print $5}' | sed 's/%//'",
+        "expected_condition": "< 80",
+        "required": true
+      },
+      {
+        "name": "memory_usage",
+        "type": "command",
+        "command": "free | awk 'NR==2{printf \"%.0f\", $3*100/$2}'",
+        "expected_condition": "< 85",
+        "required": true
+      },
+      {
+        "name": "database_connection",
+        "type": "http",
+        "url": "http://localhost:3001/api/health/database",
+        "expected_status": 200,
+        "timeout_seconds": 10,
+        "required": true
+      },
+      {
+        "name": "redis_connection",
+        "type": "http",
+        "url": "http://localhost:3001/api/health/redis",
+        "expected_status": 200,
+        "timeout_seconds": 10,
+        "required": true
+      },
+      {
+        "name": "external_apis",
+        "type": "http",
+        "url": "http://localhost:3001/api/health/external",
+        "expected_status": 200,
+        "timeout_seconds": 30,
+        "required": false
+      }
+    ]
+  },
+  "health_checks": {
+    "startup_probe": {
+      "enabled": true,
+      "initial_delay_seconds": 10,
+      "period_seconds": 5,
+      "timeout_seconds": 3,
+      "failure_threshold": 30,
+      "success_threshold": 1
+    },
+    "readiness_probe": {
+      "enabled": true,
+      "initial_delay_seconds": 5,
+      "period_seconds": 10,
+      "timeout_seconds": 5,
+      "failure_threshold": 3,
+      "success_threshold": 1
+    },
+    "liveness_probe": {
+      "enabled": true,
+      "initial_delay_seconds": 30,
+      "period_seconds": 30,
+      "timeout_seconds": 10,
+      "failure_threshold": 3,
+      "success_threshold": 1
+    },
+    "endpoints": {
+      "blog-frontend": {
+        "startup": "/health/startup",
+        "readiness": "/health/ready",
+        "liveness": "/health/live"
+      },
+      "blog-backend": {
+        "startup": "/api/health/startup",
+        "readiness": "/api/health/ready",
+        "liveness": "/api/health/live"
+      },
+      "nginx": {
+        "startup": "/nginx-health",
+        "readiness": "/nginx-health",
+        "liveness": "/nginx-health"
+      }
+    }
+  },
+  "post_deployment_validation": {
+    "enabled": true,
+    "timeout_seconds": 300,
+    "validation_tests": [
+      {
+        "name": "frontend_accessibility",
+        "type": "http",
+        "url": "http://localhost:3000",
+        "expected_status": 200,
+        "timeout_seconds": 10,
+        "retries": 3
+      },
+      {
+        "name": "api_health",
+        "type": "http",
+        "url": "http://localhost:3001/api/health",
+        "expected_status": 200,
+        "expected_body_contains": "healthy",
+        "timeout_seconds": 10,
+        "retries": 3
+      },
+      {
+        "name": "database_migration",
+        "type": "http",
+        "url": "http://localhost:3001/api/health/database",
+        "expected_status": 200,
+        "timeout_seconds": 30,
+        "retries": 2
+      },
+      {
+        "name": "user_registration",
+        "type": "api_test",
+        "method": "POST",
+        "url": "http://localhost:3001/api/auth/register",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "username": "test_user_{{timestamp}}",
+          "email": "test_{{timestamp}}@example.com",
+          "password": "TestPassword123!"
+        },
+        "expected_status": 201,
+        "cleanup": true
+      },
+      {
+        "name": "article_creation",
+        "type": "api_test",
+        "method": "POST",
+        "url": "http://localhost:3001/api/articles",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{auth_token}}"
+        },
+        "body": {
+          "title": "Test Article {{timestamp}}",
+          "content": "This is a test article for deployment validation.",
+          "tags": ["test", "deployment"]
+        },
+        "expected_status": 201,
+        "cleanup": true
+      }
+    ],
+    "performance_tests": {
+      "enabled": true,
+      "load_test": {
+        "url": "http://localhost:3000",
+        "concurrent_users": 10,
+        "duration_seconds": 60,
+        "ramp_up_seconds": 10,
+        "success_criteria": {
+          "max_response_time_ms": 2000,
+          "max_error_rate_percent": 1,
+          "min_throughput_rps": 50
+        }
+      }
+    }
+  },
+  "rollback_strategy": {
+    "enabled": true,
+    "automatic_rollback": {
+      "enabled": true,
+      "triggers": [
+        "health_check_failure",
+        "validation_failure",
+        "performance_degradation"
+      ],
+      "threshold": {
+        "consecutive_failures": 3,
+        "error_rate_percent": 5,
+        "response_time_increase_percent": 100
+      }
+    },
+    "rollback_methods": {
+      "blue_green": {
+        "method": "switch_traffic",
+        "estimated_time_seconds": 30
+      },
+      "rolling_update": {
+        "method": "previous_version",
+        "estimated_time_seconds": 120
+      }
+    },
+    "data_rollback": {
+      "enabled": false,
+      "backup_before_deployment": true,
+      "migration_rollback": true,
+      "data_consistency_check": true
+    }
+  },
+  "monitoring_during_deployment": {
+    "enabled": true,
+    "metrics_collection": {
+      "interval_seconds": 10,
+      "retention_minutes": 60
+    },
+    "key_metrics": [
+      "response_time_p95",
+      "response_time_p99",
+      "error_rate",
+      "throughput",
+      "cpu_usage",
+      "memory_usage",
+      "active_connections",
+      "database_connections"
+    ],
+    "alerting": {
+      "enabled": true,
+      "channels": ["slack", "email"],
+      "alert_on_anomaly": true,
+      "baseline_comparison": true
+    }
+  },
+  "database_migration": {
+    "strategy": "online",
+    "backup_before_migration": true,
+    "migration_timeout_seconds": 1800,
+    "rollback_migration": true,
+    "zero_downtime_techniques": {
+      "shadow_tables": true,
+      "dual_writes": true,
+      "gradual_cutover": true
+    },
+    "validation": {
+      "data_integrity_check": true,
+      "performance_regression_test": true,
+      "foreign_key_validation": true
+    }
+  },
+  "feature_flags": {
+    "enabled": true,
+    "provider": "internal",
+    "deployment_gates": {
+      "new_features_disabled": true,
+      "gradual_feature_rollout": true,
+      "instant_feature_toggle": true
+    },
+    "rollback_features": {
+      "automatic_disable_on_error": true,
+      "manual_override": true
+    }
+  },
+  "notification": {
+    "enabled": true,
+    "channels": {
+      "slack": {
+        "enabled": true,
+        "webhook_url": "${SLACK_WEBHOOK_URL}",
+        "channel": "#deployments"
+      },
+      "email": {
+        "enabled": true,
+        "recipients": ["devops@example.com", "team@example.com"]
+      },
+      "teams": {
+        "enabled": false,
+        "webhook_url": "${TEAMS_WEBHOOK_URL}"
+      }
+    },
+    "events": {
+      "deployment_started": true,
+      "deployment_completed": true,
+      "deployment_failed": true,
+      "rollback_initiated": true,
+      "rollback_completed": true,
+      "health_check_failed": true,
+      "validation_failed": true
+    },
+    "message_templates": {
+      "deployment_started": "🚀 Deployment started for {service} version {version} using {strategy} strategy",
+      "deployment_completed": "✅ Deployment completed successfully for {service} version {version} in {duration}",
+      "deployment_failed": "❌ Deployment failed for {service} version {version}. Reason: {error}",
+      "rollback_initiated": "🔄 Rollback initiated for {service} from version {version} to {previous_version}",
+      "rollback_completed": "✅ Rollback completed for {service} to version {previous_version}"
+    }
+  },
+  "logging": {
+    "enabled": true,
+    "log_level": "info",
+    "log_file": "/var/log/deployment/zero-downtime.log",
+    "structured_logging": true,
+    "include_metrics": true,
+    "retention_days": 30
+  },
+  "security": {
+    "image_scanning": {
+      "enabled": true,
+      "fail_on_critical": true,
+      "fail_on_high": false,
+      "scanner": "trivy"
+    },
+    "secrets_management": {
+      "rotate_secrets": false,
+      "validate_secrets": true,
+      "encrypted_storage": true
+    },
+    "network_policies": {
+      "enforce_during_deployment": true,
+      "temporary_access_rules": false
+    }
+  }
+}

@@ -1,0 +1,188 @@
+{
+  "cpu_usage_percent": 80,
+  "memory_usage_percent": 85,
+  "disk_usage_percent": 90,
+  "response_time_ms": 5000,
+  "error_rate_percent": 5,
+  "availability_percent": 99,
+  "prometheus": {
+    "target_up_rate_percent": 95,
+    "query_duration_ms": 3000,
+    "series_count_max": 1000000,
+    "chunk_count_max": 10000000,
+    "storage_retention_days": 15
+  },
+  "grafana": {
+    "datasource_health_rate_percent": 90,
+    "dashboard_load_time_ms": 10000,
+    "api_response_time_ms": 2000,
+    "active_sessions_max": 100
+  },
+  "alertmanager": {
+    "firing_alerts_max": 10,
+    "pending_alerts_max": 20,
+    "notification_queue_max": 100,
+    "config_reload_time_ms": 5000
+  },
+  "loki": {
+    "ingestion_rate_mb_per_sec": 100,
+    "query_timeout_ms": 30000,
+    "streams_max": 100000,
+    "log_retention_days": 30,
+    "chunk_size_mb": 10
+  },
+  "jaeger": {
+    "trace_ingestion_rate_per_sec": 1000,
+    "query_timeout_ms": 15000,
+    "span_storage_days": 7,
+    "service_count_max": 50,
+    "dependency_depth_max": 10
+  },
+  "elasticsearch": {
+    "cluster_health_yellow_timeout_min": 5,
+    "cluster_health_red_timeout_min": 1,
+    "unassigned_shards_max": 0,
+    "relocating_shards_max": 5,
+    "index_size_gb_max": 100,
+    "search_latency_ms": 1000,
+    "indexing_latency_ms": 500,
+    "jvm_heap_usage_percent": 75,
+    "disk_usage_percent": 85
+  },
+  "kibana": {
+    "dashboard_load_time_ms": 15000,
+    "visualization_render_time_ms": 10000,
+    "elasticsearch_connection_timeout_ms": 5000,
+    "plugin_health_check_timeout_ms": 3000
+  },
+  "node_exporter": {
+    "cpu_usage_percent": 80,
+    "memory_usage_percent": 85,
+    "disk_usage_percent": 90,
+    "load_average_1m": 2.0,
+    "load_average_5m": 1.5,
+    "load_average_15m": 1.0,
+    "network_errors_per_sec": 10,
+    "disk_io_wait_percent": 20
+  },
+  "cadvisor": {
+    "container_cpu_usage_percent": 80,
+    "container_memory_usage_percent": 85,
+    "container_restart_count_max": 5,
+    "container_oom_kill_count_max": 1,
+    "network_rx_errors_per_sec": 10,
+    "network_tx_errors_per_sec": 10
+  },
+  "promtail": {
+    "log_ingestion_rate_mb_per_sec": 50,
+    "failed_entries_per_sec": 10,
+    "batch_size_max": 1000,
+    "queue_size_max": 10000,
+    "file_lag_seconds": 60
+  },
+  "filebeat": {
+    "harvester_count_max": 100,
+    "events_per_sec_max": 10000,
+    "registry_file_size_mb_max": 100,
+    "output_errors_per_sec": 5,
+    "pipeline_events_failed_per_sec": 10
+  },
+  "metricbeat": {
+    "module_errors_per_sec": 5,
+    "events_per_sec_max": 5000,
+    "output_errors_per_sec": 5,
+    "memory_usage_mb_max": 500,
+    "cpu_usage_percent_max": 20
+  },
+  "traefik": {
+    "request_duration_ms_p95": 2000,
+    "request_duration_ms_p99": 5000,
+    "error_rate_percent": 5,
+    "backend_down_count_max": 1,
+    "certificate_expiry_days_min": 30,
+    "middleware_errors_per_sec": 10
+  },
+  "application": {
+    "api_response_time_ms_p95": 1000,
+    "api_response_time_ms_p99": 2000,
+    "api_error_rate_percent": 1,
+    "database_connection_pool_usage_percent": 80,
+    "cache_hit_rate_percent_min": 80,
+    "queue_size_max": 1000,
+    "active_sessions_max": 1000,
+    "memory_usage_mb_max": 2048,
+    "cpu_usage_percent_max": 70
+  },
+  "database": {
+    "connection_count_max": 100,
+    "query_duration_ms_p95": 1000,
+    "query_duration_ms_p99": 5000,
+    "slow_query_count_per_min": 10,
+    "deadlock_count_per_hour": 5,
+    "replication_lag_seconds": 60,
+    "disk_usage_percent": 85,
+    "buffer_pool_hit_rate_percent_min": 95
+  },
+  "redis": {
+    "memory_usage_percent": 80,
+    "connected_clients_max": 1000,
+    "blocked_clients_max": 10,
+    "keyspace_hit_rate_percent_min": 90,
+    "evicted_keys_per_sec": 100,
+    "expired_keys_per_sec": 1000,
+    "command_duration_ms_p95": 10,
+    "replication_lag_seconds": 5
+  },
+  "nginx": {
+    "request_rate_per_sec_max": 10000,
+    "response_time_ms_p95": 500,
+    "response_time_ms_p99": 1000,
+    "error_rate_percent": 5,
+    "active_connections_max": 1000,
+    "waiting_connections_max": 100,
+    "ssl_handshake_time_ms": 1000,
+    "upstream_response_time_ms": 2000
+  },
+  "network": {
+    "latency_ms": 100,
+    "packet_loss_percent": 1,
+    "bandwidth_usage_percent": 80,
+    "connection_errors_per_sec": 10,
+    "dns_resolution_time_ms": 1000,
+    "tcp_retransmissions_per_sec": 100
+  },
+  "security": {
+    "failed_login_attempts_per_min": 10,
+    "suspicious_requests_per_min": 50,
+    "certificate_expiry_days_min": 30,
+    "vulnerability_scan_score_max": 7.0,
+    "intrusion_attempts_per_hour": 100,
+    "malware_detections_per_day": 0
+  },
+  "business": {
+    "user_registration_rate_per_hour_min": 1,
+    "user_login_rate_per_hour_min": 10,
+    "article_creation_rate_per_hour_min": 1,
+    "comment_rate_per_hour_min": 5,
+    "search_success_rate_percent_min": 95,
+    "page_load_time_ms_p95": 3000,
+    "bounce_rate_percent_max": 60,
+    "conversion_rate_percent_min": 2
+  },
+  "backup": {
+    "backup_success_rate_percent_min": 100,
+    "backup_duration_hours_max": 4,
+    "backup_size_growth_percent_max": 20,
+    "recovery_time_hours_max": 2,
+    "backup_age_days_max": 1,
+    "backup_verification_success_rate_percent_min": 100
+  },
+  "maintenance": {
+    "deployment_duration_minutes_max": 30,
+    "deployment_success_rate_percent_min": 95,
+    "rollback_time_minutes_max": 10,
+    "downtime_minutes_per_month_max": 60,
+    "maintenance_window_usage_percent_max": 80,
+    "change_failure_rate_percent_max": 5
+  }
+}

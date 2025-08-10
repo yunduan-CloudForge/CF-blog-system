@@ -1,0 +1,222 @@
+# Prometheus 记录规则
+# 用于预计算常用的查询指标，提高查询性能
+
+groups:
+  # 系统指标记录规则
+  - name: system_recording.rules
+    interval: 30s
+    rules:
+      # CPU 使用率
+      - record: instance:cpu_usage:rate5m
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+
+      # 内存使用率
+      - record: instance:memory_usage:ratio
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100
+
+      # 磁盘使用率
+      - record: instance:disk_usage:ratio
+        expr: (1 - (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"})) * 100
+
+      # 网络接收速率
+      - record: instance:network_receive_bytes:rate5m
+        expr: rate(node_network_receive_bytes_total[5m])
+
+      # 网络发送速率
+      - record: instance:network_transmit_bytes:rate5m
+        expr: rate(node_network_transmit_bytes_total[5m])
+
+      # 磁盘读取速率
+      - record: instance:disk_read_bytes:rate5m
+        expr: rate(node_disk_read_bytes_total[5m])
+
+      # 磁盘写入速率
+      - record: instance:disk_write_bytes:rate5m
+        expr: rate(node_disk_written_bytes_total[5m])
+
+      # 系统负载
+      - record: instance:load_per_cpu:ratio
+        expr: node_load1 / count by(instance) (node_cpu_seconds_total{mode="idle"})
+
+  # 容器指标记录规则
+  - name: container_recording.rules
+    interval: 30s
+    rules:
+      # 容器CPU使用率
+      - record: container:cpu_usage:rate5m
+        expr: rate(container_cpu_usage_seconds_total{name!=""}[5m]) * 100
+
+      # 容器内存使用率
+      - record: container:memory_usage:ratio
+        expr: (container_memory_usage_bytes{name!=""} / container_spec_memory_limit_bytes{name!=""}) * 100
+
+      # 容器网络接收速率
+      - record: container:network_receive_bytes:rate5m
+        expr: rate(container_network_receive_bytes_total{name!=""}[5m])
+
+      # 容器网络发送速率
+      - record: container:network_transmit_bytes:rate5m
+        expr: rate(container_network_transmit_bytes_total{name!=""}[5m])
+
+      # 容器文件系统使用率
+      - record: container:fs_usage:ratio
+        expr: (container_fs_usage_bytes{name!=""} / container_fs_limit_bytes{name!=""}) * 100
+
+  # HTTP 指标记录规则
+  - name: http_recording.rules
+    interval: 30s
+    rules:
+      # HTTP 请求速率
+      - record: http:request_rate:5m
+        expr: rate(http_requests_total[5m])
+
+      # HTTP 错误率
+      - record: http:error_rate:5m
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100
+
+      # HTTP 响应时间分位数
+      - record: http:response_time:p50:5m
+        expr: histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))
+
+      - record: http:response_time:p90:5m
+        expr: histogram_quantile(0.90, rate(http_request_duration_seconds_bucket[5m]))
+
+      - record: http:response_time:p95:5m
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
+
+      - record: http:response_time:p99:5m
+        expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))
+
+      # HTTP 请求大小分位数
+      - record: http:request_size:p50:5m
+        expr: histogram_quantile(0.50, rate(http_request_size_bytes_bucket[5m]))
+
+      - record: http:request_size:p90:5m
+        expr: histogram_quantile(0.90, rate(http_request_size_bytes_bucket[5m]))
+
+      # HTTP 响应大小分位数
+      - record: http:response_size:p50:5m
+        expr: histogram_quantile(0.50, rate(http_response_size_bytes_bucket[5m]))
+
+      - record: http:response_size:p90:5m
+        expr: histogram_quantile(0.90, rate(http_response_size_bytes_bucket[5m]))
+
+  # 数据库指标记录规则
+  - name: database_recording.rules
+    interval: 30s
+    rules:
+      # PostgreSQL 连接使用率
+      - record: postgres:connection_usage:ratio
+        expr: pg_stat_activity_count / pg_settings_max_connections * 100
+
+      # PostgreSQL 查询速率
+      - record: postgres:queries:rate5m
+        expr: rate(pg_stat_database_xact_commit[5m]) + rate(pg_stat_database_xact_rollback[5m])
+
+      # PostgreSQL 缓存命中率
+      - record: postgres:cache_hit_ratio
+        expr: pg_stat_database_blks_hit / (pg_stat_database_blks_hit + pg_stat_database_blks_read) * 100
+
+      # Redis 内存使用率
+      - record: redis:memory_usage:ratio
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100
+
+      # Redis 命令速率
+      - record: redis:commands:rate5m
+        expr: rate(redis_commands_processed_total[5m])
+
+      # Redis 缓存命中率
+      - record: redis:cache_hit_ratio
+        expr: redis_keyspace_hits / (redis_keyspace_hits + redis_keyspace_misses) * 100
+
+  # 应用指标记录规则
+  - name: application_recording.rules
+    interval: 30s
+    rules:
+      # 应用可用性
+      - record: app:availability:5m
+        expr: avg_over_time(up{job="blog-system-app"}[5m]) * 100
+
+      # API 端点请求速率
+      - record: api:request_rate:5m
+        expr: rate(http_requests_total{job="blog-system-app"}[5m])
+
+      # API 端点错误率
+      - record: api:error_rate:5m
+        expr: rate(http_requests_total{job="blog-system-app",status=~"5.."}[5m]) / rate(http_requests_total{job="blog-system-app"}[5m]) * 100
+
+      # 用户会话数
+      - record: app:active_sessions:current
+        expr: active_sessions_total
+
+      # 数据库连接池使用率
+      - record: app:db_pool_usage:ratio
+        expr: db_connections_active / db_connections_max * 100
+
+  # 业务指标记录规则
+  - name: business_recording.rules
+    interval: 60s
+    rules:
+      # 用户注册速率
+      - record: business:user_registrations:rate1h
+        expr: rate(user_registrations_total[1h])
+
+      # 文章发布速率
+      - record: business:articles_published:rate1h
+        expr: rate(articles_published_total[1h])
+
+      # 评论发布速率
+      - record: business:comments_posted:rate1h
+        expr: rate(comments_posted_total[1h])
+
+      # 页面浏览速率
+      - record: business:page_views:rate1h
+        expr: rate(page_views_total[1h])
+
+      # 搜索查询速率
+      - record: business:search_queries:rate1h
+        expr: rate(search_queries_total[1h])
+
+  # SLA 指标记录规则
+  - name: sla_recording.rules
+    interval: 60s
+    rules:
+      # 服务可用性 SLA (99.9%)
+      - record: sla:availability:24h
+        expr: avg_over_time(up{job="blog-system-app"}[24h]) * 100
+
+      # 响应时间 SLA (95% < 2s)
+      - record: sla:response_time:p95:24h
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="blog-system-app"}[24h]))
+
+      # 错误率 SLA (< 1%)
+      - record: sla:error_rate:24h
+        expr: rate(http_requests_total{job="blog-system-app",status=~"5.."}[24h]) / rate(http_requests_total{job="blog-system-app"}[24h]) * 100
+
+      # 吞吐量 SLA
+      - record: sla:throughput:24h
+        expr: rate(http_requests_total{job="blog-system-app"}[24h])
+
+  # 容量规划指标
+  - name: capacity_recording.rules
+    interval: 300s
+    rules:
+      # CPU 使用趋势 (7天)
+      - record: capacity:cpu_usage:trend7d
+        expr: avg_over_time(instance:cpu_usage:rate5m[7d])
+
+      # 内存使用趋势 (7天)
+      - record: capacity:memory_usage:trend7d
+        expr: avg_over_time(instance:memory_usage:ratio[7d])
+
+      # 磁盘使用趋势 (7天)
+      - record: capacity:disk_usage:trend7d
+        expr: avg_over_time(instance:disk_usage:ratio[7d])
+
+      # 请求量趋势 (7天)
+      - record: capacity:request_rate:trend7d
+        expr: avg_over_time(http:request_rate:5m[7d])
+
+      # 数据库连接趋势 (7天)
+      - record: capacity:db_connections:trend7d
+        expr: avg_over_time(postgres:connection_usage:ratio[7d])
