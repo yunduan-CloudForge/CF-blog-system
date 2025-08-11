@@ -1,173 +1,288 @@
-import express from 'express';
-import { authenticateToken, requireAdmin } from '../middleware/auth.js';
-import {
-  createCategory,
-  getCategories,
-  getCategoriesWithStats,
-  getCategoryById,
-  getCategoryBySlug,
-  updateCategory,
-  deleteCategory
-} from '../services/categoryService.js';
-import { CreateCategoryData, UpdateCategoryData } from '../models/Category.js';
+/**
+ * 分类管理API路由
+ * 处理分类的CRUD操作
+ */
+import { Router, type Request, type Response } from 'express';
+import { query, run, get } from '../database/connection';
+import { authMiddleware } from '../middleware/auth';
 
-const router = express.Router();
+const router = Router();
 
-// 获取分类列表
-router.get('/', async (req, res) => {
+/**
+ * 获取所有分类
+ * GET /api/categories
+ */
+router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const withStats = req.query.stats === 'true';
-    
-    const categories = withStats 
-      ? await getCategoriesWithStats()
-      : await getCategories();
-    
+    const categories = await query(`
+      SELECT 
+        c.id,
+        c.name,
+        c.description,
+        c.created_at,
+        COUNT(a.id) as article_count
+      FROM categories c
+      LEFT JOIN articles a ON c.id = a.category_id AND a.status = 'published'
+      GROUP BY c.id, c.name, c.description, c.created_at
+      ORDER BY c.name ASC
+    `);
+
     res.json({
       success: true,
       message: '获取分类列表成功',
-      data: { categories }
+      data: categories,
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('获取分类列表失败:', error);
+    console.error('获取分类列表错误:', error);
     res.status(500).json({
       success: false,
-      message: '获取分类列表失败',
-      error: error instanceof Error ? error.message : '未知错误'
+      message: '服务器内部错误',
+      timestamp: new Date().toISOString()
     });
   }
 });
 
-// 根据ID或slug获取分类
-router.get('/:id', async (req, res) => {
+/**
+ * 获取单个分类详情
+ * GET /api/categories/:id
+ */
+router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    
-    // 判断是ID还是slug
-    let category;
-    if (id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-      // UUID格式，按ID查询
-      category = await getCategoryById(id);
-    } else {
-      // 按slug查询
-      category = await getCategoryBySlug(id);
-    }
-    
+
+    const category = await get(`
+      SELECT 
+        c.id,
+        c.name,
+        c.description,
+        c.created_at,
+        COUNT(a.id) as article_count
+      FROM categories c
+      LEFT JOIN articles a ON c.id = a.category_id AND a.status = 'published'
+      WHERE c.id = ?
+      GROUP BY c.id, c.name, c.description, c.created_at
+    `, [id]);
+
     if (!category) {
-      return res.status(404).json({ error: '分类不存在' });
+      res.status(404).json({
+        success: false,
+        message: '分类不存在',
+        timestamp: new Date().toISOString()
+      });
+      return;
     }
-    
-    res.json({ category });
+
+    res.json({
+      success: true,
+      message: '获取分类详情成功',
+      data: { category },
+      timestamp: new Date().toISOString()
+    });
   } catch (error) {
-    console.error('获取分类失败:', error);
-    res.status(500).json({ error: '获取分类失败' });
+    console.error('获取分类详情错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器内部错误',
+      timestamp: new Date().toISOString()
+    });
   }
 });
 
-// 创建分类（需要管理员权限）
-router.post('/', authenticateToken, requireAdmin, async (req, res) => {
+/**
+ * 创建分类
+ * POST /api/categories
+ * 需要管理员权限
+ */
+router.post('/', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, description, color } = req.body;
-    
+    const userRole = (req as any).user.role;
+    const { name, description } = req.body;
+
+    // 检查权限
+    if (userRole !== 'admin') {
+      res.status(403).json({
+        success: false,
+        message: '只有管理员可以创建分类',
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+
     // 验证必填字段
-    if (!name || !color) {
-      return res.status(400).json({ error: '分类名称和颜色为必填项' });
+    if (!name || !name.trim()) {
+      res.status(400).json({
+        success: false,
+        message: '分类名称不能为空',
+        timestamp: new Date().toISOString()
+      });
+      return;
     }
-    
-    if (name.length > 50) {
-      return res.status(400).json({ error: '分类名称长度不能超过50字符' });
+
+    // 检查分类名称是否已存在
+    const existingCategory = await get('SELECT id FROM categories WHERE name = ?', [name.trim()]);
+    if (existingCategory) {
+      res.status(409).json({
+        success: false,
+        message: '分类名称已存在',
+        timestamp: new Date().toISOString()
+      });
+      return;
     }
-    
-    if (description && description.length > 200) {
-      return res.status(400).json({ error: '分类描述长度不能超过200字符' });
-    }
-    
-    // 验证颜色格式（十六进制）
-    if (!/^#[0-9A-Fa-f]{6}$/.test(color)) {
-      return res.status(400).json({ error: '颜色格式不正确，请使用十六进制格式（如#FF0000）' });
-    }
-    
-    const categoryData: CreateCategoryData = {
-      name,
-      description,
-      color
-    };
-    
-    const category = await createCategory(categoryData);
-    
-    res.status(201).json({ category });
+
+    // 创建分类
+    const result = await run(
+      'INSERT INTO categories (name, description) VALUES (?, ?)',
+      [name.trim(), description || null]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: '分类创建成功',
+      data: { categoryId: result.lastID },
+      timestamp: new Date().toISOString()
+    });
   } catch (error) {
-    console.error('创建分类失败:', error);
-    if (error instanceof Error) {
-      res.status(400).json({ error: error.message });
-    } else {
-      res.status(500).json({ error: '创建分类失败' });
-    }
+    console.error('创建分类错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器内部错误',
+      timestamp: new Date().toISOString()
+    });
   }
 });
 
-// 更新分类（需要管理员权限）
-router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
+/**
+ * 更新分类
+ * PUT /api/categories/:id
+ * 需要管理员权限
+ */
+router.put('/:id', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { name, description, color } = req.body;
-    
-    // 验证数据
-    if (name && name.length > 50) {
-      return res.status(400).json({ error: '分类名称长度不能超过50字符' });
+    const userRole = (req as any).user.role;
+    const { name, description } = req.body;
+
+    // 检查权限
+    if (userRole !== 'admin') {
+      res.status(403).json({
+        success: false,
+        message: '只有管理员可以更新分类',
+        timestamp: new Date().toISOString()
+      });
+      return;
     }
-    
-    if (description && description.length > 200) {
-      return res.status(400).json({ error: '分类描述长度不能超过200字符' });
+
+    // 检查分类是否存在
+    const category = await get('SELECT id FROM categories WHERE id = ?', [id]);
+    if (!category) {
+      res.status(404).json({
+        success: false,
+        message: '分类不存在',
+        timestamp: new Date().toISOString()
+      });
+      return;
     }
-    
-    if (color && !/^#[0-9A-Fa-f]{6}$/.test(color)) {
-      return res.status(400).json({ error: '颜色格式不正确，请使用十六进制格式（如#FF0000）' });
+
+    // 验证必填字段
+    if (!name || !name.trim()) {
+      res.status(400).json({
+        success: false,
+        message: '分类名称不能为空',
+        timestamp: new Date().toISOString()
+      });
+      return;
     }
-    
-    const updateData: UpdateCategoryData = {};
-    
-    if (name !== undefined) updateData.name = name;
-    if (description !== undefined) updateData.description = description;
-    if (color !== undefined) updateData.color = color;
-    
-    const category = await updateCategory(id, updateData);
-    
-    res.json({ category });
+
+    // 检查分类名称是否已存在（排除当前分类）
+    const existingCategory = await get('SELECT id FROM categories WHERE name = ? AND id != ?', [name.trim(), id]);
+    if (existingCategory) {
+      res.status(409).json({
+        success: false,
+        message: '分类名称已存在',
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+
+    // 更新分类
+    await run(
+      'UPDATE categories SET name = ?, description = ? WHERE id = ?',
+      [name.trim(), description || null, id]
+    );
+
+    res.json({
+      success: true,
+      message: '分类更新成功',
+      timestamp: new Date().toISOString()
+    });
   } catch (error) {
-    console.error('更新分类失败:', error);
-    if (error instanceof Error) {
-      if (error.message.includes('不存在')) {
-        res.status(404).json({ error: error.message });
-      } else {
-        res.status(400).json({ error: error.message });
-      }
-    } else {
-      res.status(500).json({ error: '更新分类失败' });
-    }
+    console.error('更新分类错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器内部错误',
+      timestamp: new Date().toISOString()
+    });
   }
 });
 
-// 删除分类（需要管理员权限）
-router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
+/**
+ * 删除分类
+ * DELETE /api/categories/:id
+ * 需要管理员权限
+ */
+router.delete('/:id', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    
-    await deleteCategory(id);
-    
-    res.json({ message: '分类删除成功' });
-  } catch (error) {
-    console.error('删除分类失败:', error);
-    if (error instanceof Error) {
-      if (error.message.includes('不存在')) {
-        res.status(404).json({ error: error.message });
-      } else if (error.message.includes('还有文章')) {
-        res.status(400).json({ error: error.message });
-      } else {
-        res.status(400).json({ error: error.message });
-      }
-    } else {
-      res.status(500).json({ error: '删除分类失败' });
+    const userRole = (req as any).user.role;
+
+    // 检查权限
+    if (userRole !== 'admin') {
+      res.status(403).json({
+        success: false,
+        message: '只有管理员可以删除分类',
+        timestamp: new Date().toISOString()
+      });
+      return;
     }
+
+    // 检查分类是否存在
+    const category = await get('SELECT id FROM categories WHERE id = ?', [id]);
+    if (!category) {
+      res.status(404).json({
+        success: false,
+        message: '分类不存在',
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+
+    // 检查是否有文章使用此分类
+    const articleCount = await get('SELECT COUNT(*) as count FROM articles WHERE category_id = ?', [id]);
+    if (articleCount && articleCount.count > 0) {
+      res.status(400).json({
+        success: false,
+        message: `无法删除分类，还有 ${articleCount.count} 篇文章使用此分类`,
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+
+    // 删除分类
+    await run('DELETE FROM categories WHERE id = ?', [id]);
+
+    res.json({
+      success: true,
+      message: '分类删除成功',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('删除分类错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器内部错误',
+      timestamp: new Date().toISOString()
+    });
   }
 });
 

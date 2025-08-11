@@ -1,186 +1,626 @@
-import express from 'express';
-import { authenticateToken, requireAdmin } from '../middleware/auth.js';
-import {
-  createComment,
-  getComments,
-  getArticleCommentsTree,
-  updateComment,
-  updateCommentStatus,
-  deleteComment,
-  deleteCommentByAdmin,
-  getPendingCommentsCount
-} from '../services/commentService.js';
+/**
+ * 评论系统API路由
+ * 实现评论的创建、查询、回复、点赞和删除功能
+ */
 
-const router = express.Router();
+import { Router, Request, Response } from 'express';
+import { authMiddleware, optionalAuthMiddleware } from '../middleware/auth';
+import { query, run, get } from '../database/connection';
 
-// 获取评论列表
-router.get('/', async (req, res) => {
-  try {
-    const queryParams = {
-      page: req.query.page ? parseInt(req.query.page as string) : 1,
-      limit: req.query.limit ? parseInt(req.query.limit as string) : 20,
-      article_id: req.query.article_id as string,
-      user_id: req.query.user_id as string,
-      status: req.query.status as 'pending' | 'approved' | 'rejected',
-      parent_id: req.query.parent_id as string
-    };
+const router = Router();
 
-    const result = await getComments(queryParams);
-    res.json(result);
-  } catch (error) {
-    console.error('获取评论列表失败:', error);
-    res.status(500).json({ error: '获取评论列表失败' });
+// 接口响应类型定义
+interface ApiResponse<T = any> {
+  success: boolean;
+  message: string;
+  data?: T;
+  error?: {
+    code: string;
+    details: string;
+  };
+  timestamp: string;
+}
+
+// 评论数据类型定义
+interface Comment {
+  id: number;
+  content: string;
+  user_id: number;
+  article_id: number;
+  parent_id: number | null;
+  likes: number;
+  created_at: string;
+  updated_at: string;
+  user?: {
+    id: number;
+    username: string;
+    avatar: string | null;
+  };
+  replies?: Comment[];
+  liked?: boolean;
+}
+
+// 分页参数类型
+interface PaginationParams {
+  page: number;
+  limit: number;
+  sort: string;
+  order: 'asc' | 'desc';
+}
+
+/**
+ * 创建统一的API响应
+ */
+function createResponse<T>(success: boolean, message: string, data?: T, error?: { code: string; details: string }): ApiResponse<T> {
+  return {
+    success,
+    message,
+    data,
+    error,
+    timestamp: new Date().toISOString()
+  };
+}
+
+/**
+ * 内容安全过滤
+ */
+function sanitizeContent(content: string): string {
+  // 移除HTML标签，保留纯文本
+  return content.replace(/<[^>]*>/g, '').trim();
+}
+
+/**
+ * 验证评论内容
+ */
+function validateCommentContent(content: string): { valid: boolean; error?: string } {
+  if (!content || typeof content !== 'string') {
+    return { valid: false, error: '评论内容不能为空' };
   }
-});
 
-// 获取文章评论树
-router.get('/article/:articleId/tree', async (req, res) => {
-  try {
-    const { articleId } = req.params;
-    const comments = await getArticleCommentsTree(articleId);
-    res.json(comments);
-  } catch (error) {
-    console.error('获取文章评论失败:', error);
-    res.status(500).json({ error: '获取文章评论失败' });
+  const trimmed = content.trim();
+  if (trimmed.length < 1) {
+    return { valid: false, error: '评论内容至少需要1个字符' };
   }
-});
 
-// 获取待审核评论数量（管理员）
-router.get('/pending/count', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const count = await getPendingCommentsCount();
-    res.json({ count });
-  } catch (error) {
-    console.error('获取待审核评论数量失败:', error);
-    res.status(500).json({ error: '获取待审核评论数量失败' });
+  if (trimmed.length > 10000) {
+    return { valid: false, error: '评论内容不能超过10000个字符' };
   }
-});
 
-// 创建评论
-router.post('/', authenticateToken, async (req, res) => {
-  try {
-    const { article_id, content, parent_id } = req.body;
-    const userId = req.user!.id;
+  return { valid: true };
+}
 
-    // 验证必填字段
-    if (!article_id || !content) {
-      return res.status(400).json({ error: '文章ID和评论内容不能为空' });
-    }
+/**
+ * 检查评论删除权限
+ */
+function canDeleteComment(user: any, comment: Comment, article: any): boolean {
+  // 管理员可以删除任何评论
+  if (user.role === 'admin') {
+    return true;
+  }
+  
+  // 文章作者可以删除文章下的任何评论
+  if (article.author_id === user.userId) {
+    return true;
+  }
+  
+  // 评论作者可以删除自己的评论
+  if (comment.user_id === user.userId) {
+    return true;
+  }
+  
+  return false;
+}
 
-    // 验证内容长度
-    if (content.length < 1 || content.length > 1000) {
-      return res.status(400).json({ error: '评论内容长度必须在1-1000字符之间' });
-    }
+/**
+ * 构建嵌套评论结构
+ */
+function buildCommentTree(comments: Comment[]): Comment[] {
+  const commentMap = new Map<number, Comment>();
+  const rootComments: Comment[] = [];
 
-    const commentData = {
-      article_id,
-      content: content.trim(),
-      parent_id: parent_id || undefined
-    };
+  // 初始化所有评论
+  comments.forEach(comment => {
+    comment.replies = [];
+    commentMap.set(comment.id, comment);
+  });
 
-    const comment = await createComment(userId, commentData);
-    res.status(201).json(comment);
-  } catch (error) {
-    console.error('创建评论失败:', error);
-    if (error instanceof Error) {
-      if (error.message === '文章不存在或未发布' || error.message === '父评论不存在') {
-        return res.status(404).json({ error: error.message });
+  // 构建树形结构
+  comments.forEach(comment => {
+    if (comment.parent_id === null) {
+      rootComments.push(comment);
+    } else {
+      const parent = commentMap.get(comment.parent_id);
+      if (parent) {
+        parent.replies!.push(comment);
       }
     }
-    res.status(500).json({ error: '创建评论失败' });
+  });
+
+  return rootComments;
+}
+
+/**
+ * 获取评论列表
+ * GET /api/comments
+ */
+router.get('/', optionalAuthMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { article_id, page = 1, limit = 20, sort = 'created_at', order = 'desc' } = req.query;
+
+    // 验证必需参数
+    if (!article_id) {
+      return res.status(400).json(createResponse(false, '文章ID不能为空', null, {
+        code: 'COMMENT_ARTICLE_ID_REQUIRED',
+        details: '请提供有效的文章ID'
+      }));
+    }
+
+    // 验证分页参数
+    const pageNum = Math.max(1, parseInt(page as string) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit as string) || 20));
+    const sortField = ['created_at', 'likes'].includes(sort as string) ? sort as string : 'created_at';
+    const orderDir = order === 'asc' ? 'ASC' : 'DESC';
+
+    // 验证文章是否存在
+    const article = await get('SELECT id, author_id FROM articles WHERE id = ?', [article_id]);
+    if (!article) {
+      return res.status(404).json(createResponse(false, '文章不存在', null, {
+        code: 'COMMENT_ARTICLE_NOT_FOUND',
+        details: '指定的文章不存在'
+      }));
+    }
+
+    // 获取评论总数
+    const totalResult = await get('SELECT COUNT(*) as total FROM comments WHERE article_id = ?', [article_id]);
+    const total = totalResult.total;
+    const totalPages = Math.ceil(total / limitNum);
+
+    // 获取顶级评论（分页）
+    const offset = (pageNum - 1) * limitNum;
+    const topLevelComments = await query(`
+      SELECT 
+        c.id, c.content, c.user_id, c.article_id, c.parent_id, c.likes,
+        c.created_at, c.updated_at,
+        u.username, u.avatar
+      FROM comments c
+      JOIN users u ON c.user_id = u.id
+      WHERE c.article_id = ? AND c.parent_id IS NULL
+      ORDER BY c.${sortField} ${orderDir}
+      LIMIT ? OFFSET ?
+    `, [article_id, limitNum, offset]);
+
+    // 获取所有回复（不分页）
+    const allReplies = await query(`
+      SELECT 
+        c.id, c.content, c.user_id, c.article_id, c.parent_id, c.likes,
+        c.created_at, c.updated_at,
+        u.username, u.avatar
+      FROM comments c
+      JOIN users u ON c.user_id = u.id
+      WHERE c.article_id = ? AND c.parent_id IS NOT NULL
+      ORDER BY c.created_at ASC
+    `, [article_id]);
+
+    // 合并所有评论
+    const allComments = [...topLevelComments, ...allReplies].map(comment => ({
+      id: comment.id,
+      content: comment.content,
+      user_id: comment.user_id,
+      article_id: comment.article_id,
+      parent_id: comment.parent_id,
+      likes: comment.likes,
+      created_at: comment.created_at,
+      updated_at: comment.updated_at,
+      user: {
+        id: comment.user_id,
+        username: comment.username,
+        avatar: comment.avatar
+      }
+    }));
+
+    // 如果用户已登录，检查点赞状态
+    if (req.user) {
+      const commentIds = allComments.map(c => c.id);
+      if (commentIds.length > 0) {
+        const likedComments = await query(`
+          SELECT comment_id FROM comment_likes 
+          WHERE user_id = ? AND comment_id IN (${commentIds.map(() => '?').join(',')})
+        `, [req.user.userId, ...commentIds]);
+        
+        const likedSet = new Set(likedComments.map(l => l.comment_id));
+        allComments.forEach(comment => {
+          comment.liked = likedSet.has(comment.id);
+        });
+      }
+    }
+
+    // 构建嵌套结构
+    const nestedComments = buildCommentTree(allComments);
+
+    res.json(createResponse(true, '获取评论列表成功', {
+      comments: nestedComments,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages
+      }
+    }));
+  } catch (error) {
+    console.error('获取评论列表失败:', error);
+    res.status(500).json(createResponse(false, '服务器内部错误', null, {
+      code: 'INTERNAL_SERVER_ERROR',
+      details: '获取评论列表时发生错误'
+    }));
   }
 });
 
-// 更新评论
-router.put('/:id', authenticateToken, async (req, res) => {
+/**
+ * 创建评论
+ * POST /api/comments
+ */
+router.post('/', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { content, article_id } = req.body;
+    const user = req.user;
+
+    // 验证评论内容
+    const contentValidation = validateCommentContent(content);
+    if (!contentValidation.valid) {
+      return res.status(400).json(createResponse(false, contentValidation.error!, null, {
+        code: 'COMMENT_CONTENT_INVALID',
+        details: contentValidation.error!
+      }));
+    }
+
+    // 验证文章ID
+    if (!article_id || typeof article_id !== 'number') {
+      return res.status(400).json(createResponse(false, '文章ID无效', null, {
+        code: 'COMMENT_ARTICLE_ID_INVALID',
+        details: '请提供有效的文章ID'
+      }));
+    }
+
+    // 验证文章是否存在
+    const article = await get('SELECT id, author_id FROM articles WHERE id = ?', [article_id]);
+    if (!article) {
+      return res.status(404).json(createResponse(false, '文章不存在', null, {
+        code: 'COMMENT_ARTICLE_NOT_FOUND',
+        details: '指定的文章不存在'
+      }));
+    }
+
+    // 过滤内容
+    const sanitizedContent = sanitizeContent(content);
+
+    // 插入评论
+    const result = await run(`
+      INSERT INTO comments (content, user_id, article_id, likes)
+      VALUES (?, ?, ?, 0)
+    `, [sanitizedContent, user.userId, article_id]);
+
+    // 获取新创建的评论详情
+    const newComment = await get(`
+      SELECT 
+        c.id, c.content, c.user_id, c.article_id, c.parent_id, c.likes,
+        c.created_at, c.updated_at,
+        u.username, u.avatar
+      FROM comments c
+      JOIN users u ON c.user_id = u.id
+      WHERE c.id = ?
+    `, [result.lastID]);
+
+    const commentResponse = {
+      id: newComment.id,
+      content: newComment.content,
+      user_id: newComment.user_id,
+      article_id: newComment.article_id,
+      parent_id: newComment.parent_id,
+      likes: newComment.likes,
+      created_at: newComment.created_at,
+      updated_at: newComment.updated_at,
+      user: {
+        id: newComment.user_id,
+        username: newComment.username,
+        avatar: newComment.avatar
+      }
+    };
+
+    res.status(201).json(createResponse(true, '评论发布成功', {
+      comment: commentResponse
+    }));
+  } catch (error) {
+    console.error('创建评论失败:', error);
+    res.status(500).json(createResponse(false, '服务器内部错误', null, {
+      code: 'INTERNAL_SERVER_ERROR',
+      details: '创建评论时发生错误'
+    }));
+  }
+});
+
+/**
+ * 回复评论
+ * POST /api/comments/:id/reply
+ */
+router.post('/:id/reply', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { content } = req.body;
-    const userId = req.user!.id;
+    const user = req.user;
 
-    // 验证内容
-    if (content && (content.length < 1 || content.length > 1000)) {
-      return res.status(400).json({ error: '评论内容长度必须在1-1000字符之间' });
+    // 验证父评论ID
+    const parentId = parseInt(id);
+    if (isNaN(parentId)) {
+      return res.status(400).json(createResponse(false, '评论ID无效', null, {
+        code: 'COMMENT_ID_INVALID',
+        details: '请提供有效的评论ID'
+      }));
     }
 
-    const updateData = {
-      content: content ? content.trim() : undefined
+    // 验证评论内容
+    const contentValidation = validateCommentContent(content);
+    if (!contentValidation.valid) {
+      return res.status(400).json(createResponse(false, contentValidation.error!, null, {
+        code: 'COMMENT_CONTENT_INVALID',
+        details: contentValidation.error!
+      }));
+    }
+
+    // 验证父评论是否存在
+    const parentComment = await get('SELECT id, article_id FROM comments WHERE id = ?', [parentId]);
+    if (!parentComment) {
+      return res.status(404).json(createResponse(false, '父评论不存在', null, {
+        code: 'COMMENT_PARENT_NOT_FOUND',
+        details: '指定的父评论不存在'
+      }));
+    }
+
+    // 验证文章是否存在
+    const article = await get('SELECT id, author_id FROM articles WHERE id = ?', [parentComment.article_id]);
+    if (!article) {
+      return res.status(404).json(createResponse(false, '文章不存在', null, {
+        code: 'COMMENT_ARTICLE_NOT_FOUND',
+        details: '关联的文章不存在'
+      }));
+    }
+
+    // 过滤内容
+    const sanitizedContent = sanitizeContent(content);
+
+    // 插入回复
+    const result = await run(`
+      INSERT INTO comments (content, user_id, article_id, parent_id, likes)
+      VALUES (?, ?, ?, ?, 0)
+    `, [sanitizedContent, user.userId, parentComment.article_id, parentId]);
+
+    // 获取新创建的回复详情
+    const newReply = await get(`
+      SELECT 
+        c.id, c.content, c.user_id, c.article_id, c.parent_id, c.likes,
+        c.created_at, c.updated_at,
+        u.username, u.avatar
+      FROM comments c
+      JOIN users u ON c.user_id = u.id
+      WHERE c.id = ?
+    `, [result.lastID]);
+
+    const replyResponse = {
+      id: newReply.id,
+      content: newReply.content,
+      user_id: newReply.user_id,
+      article_id: newReply.article_id,
+      parent_id: newReply.parent_id,
+      likes: newReply.likes,
+      created_at: newReply.created_at,
+      updated_at: newReply.updated_at,
+      user: {
+        id: newReply.user_id,
+        username: newReply.username,
+        avatar: newReply.avatar
+      }
     };
 
-    const comment = await updateComment(id, userId, updateData);
-    res.json(comment);
+    res.status(201).json(createResponse(true, '回复发布成功', {
+      comment: replyResponse
+    }));
   } catch (error) {
-    console.error('更新评论失败:', error);
-    if (error instanceof Error) {
-      if (error.message === '评论不存在或无权限修改') {
-        return res.status(404).json({ error: error.message });
-      }
-      if (error.message === '没有提供更新数据') {
-        return res.status(400).json({ error: error.message });
-      }
-    }
-    res.status(500).json({ error: '更新评论失败' });
+    console.error('回复评论失败:', error);
+    res.status(500).json(createResponse(false, '服务器内部错误', null, {
+      code: 'INTERNAL_SERVER_ERROR',
+      details: '回复评论时发生错误'
+    }));
   }
 });
 
-// 更新评论状态（管理员）
-router.put('/:id/status', authenticateToken, requireAdmin, async (req, res) => {
+/**
+ * 点赞/取消点赞评论
+ * POST /api/comments/:id/like
+ */
+router.post('/:id/like', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const user = req.user;
 
-    // 验证状态值
-    if (!['pending', 'approved', 'rejected'].includes(status)) {
-      return res.status(400).json({ error: '无效的状态值' });
+    // 验证评论ID
+    const commentId = parseInt(id);
+    if (isNaN(commentId)) {
+      return res.status(400).json(createResponse(false, '评论ID无效', null, {
+        code: 'COMMENT_ID_INVALID',
+        details: '请提供有效的评论ID'
+      }));
     }
 
-    const comment = await updateCommentStatus(id, status);
-    res.json(comment);
+    // 验证评论是否存在
+    const comment = await get('SELECT id, likes FROM comments WHERE id = ?', [commentId]);
+    if (!comment) {
+      return res.status(404).json(createResponse(false, '评论不存在', null, {
+        code: 'COMMENT_NOT_FOUND',
+        details: '指定的评论不存在'
+      }));
+    }
+
+    // 检查是否已经点赞
+    const existingLike = await get(
+      'SELECT id FROM comment_likes WHERE user_id = ? AND comment_id = ?',
+      [user.userId, commentId]
+    );
+
+    let liked = false;
+    let newLikesCount = comment.likes;
+
+    if (existingLike) {
+      // 取消点赞
+      await run('DELETE FROM comment_likes WHERE user_id = ? AND comment_id = ?', [user.userId, commentId]);
+      await run('UPDATE comments SET likes = likes - 1 WHERE id = ?', [commentId]);
+      newLikesCount = comment.likes - 1;
+      liked = false;
+    } else {
+      // 添加点赞
+      await run('INSERT INTO comment_likes (user_id, comment_id) VALUES (?, ?)', [user.userId, commentId]);
+      await run('UPDATE comments SET likes = likes + 1 WHERE id = ?', [commentId]);
+      newLikesCount = comment.likes + 1;
+      liked = true;
+    }
+
+    res.json(createResponse(true, liked ? '点赞成功' : '取消点赞成功', {
+      liked,
+      likes: newLikesCount
+    }));
   } catch (error) {
-    console.error('更新评论状态失败:', error);
-    if (error instanceof Error) {
-      if (error.message === '评论不存在') {
-        return res.status(404).json({ error: error.message });
-      }
-    }
-    res.status(500).json({ error: '更新评论状态失败' });
+    console.error('点赞评论失败:', error);
+    res.status(500).json(createResponse(false, '服务器内部错误', null, {
+      code: 'INTERNAL_SERVER_ERROR',
+      details: '点赞评论时发生错误'
+    }));
   }
 });
 
-// 删除评论
-router.delete('/:id', authenticateToken, async (req, res) => {
+/**
+ * 删除评论
+ * DELETE /api/comments/:id
+ */
+router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = req.user!.id;
+    const user = req.user;
 
-    await deleteComment(id, userId);
-    res.status(204).send();
+    // 验证评论ID
+    const commentId = parseInt(id);
+    if (isNaN(commentId)) {
+      return res.status(400).json(createResponse(false, '评论ID无效', null, {
+        code: 'COMMENT_ID_INVALID',
+        details: '请提供有效的评论ID'
+      }));
+    }
+
+    // 获取评论详情
+    const comment = await get('SELECT id, user_id, article_id FROM comments WHERE id = ?', [commentId]);
+    if (!comment) {
+      return res.status(404).json(createResponse(false, '评论不存在', null, {
+        code: 'COMMENT_NOT_FOUND',
+        details: '指定的评论不存在'
+      }));
+    }
+
+    // 获取文章详情
+    const article = await get('SELECT id, author_id FROM articles WHERE id = ?', [comment.article_id]);
+    if (!article) {
+      return res.status(404).json(createResponse(false, '关联文章不存在', null, {
+        code: 'COMMENT_ARTICLE_NOT_FOUND',
+        details: '评论关联的文章不存在'
+      }));
+    }
+
+    // 检查删除权限
+    if (!canDeleteComment(user, comment, article)) {
+      return res.status(403).json(createResponse(false, '无权删除此评论', null, {
+        code: 'COMMENT_DELETE_FORBIDDEN',
+        details: '只有评论作者、文章作者或管理员可以删除评论'
+      }));
+    }
+
+    // 删除评论（级联删除回复和点赞记录）
+    await run('DELETE FROM comments WHERE id = ?', [commentId]);
+
+    res.json(createResponse(true, '评论删除成功'));
   } catch (error) {
     console.error('删除评论失败:', error);
-    if (error instanceof Error) {
-      if (error.message === '评论不存在或无权限删除') {
-        return res.status(404).json({ error: error.message });
-      }
-    }
-    res.status(500).json({ error: '删除评论失败' });
+    res.status(500).json(createResponse(false, '服务器内部错误', null, {
+      code: 'INTERNAL_SERVER_ERROR',
+      details: '删除评论时发生错误'
+    }));
   }
 });
 
-// 管理员删除评论
-router.delete('/:id/admin', authenticateToken, requireAdmin, async (req, res) => {
+/**
+ * 获取单个评论详情
+ * GET /api/comments/:id
+ */
+router.get('/:id', optionalAuthMiddleware, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    await deleteCommentByAdmin(id);
-    res.status(204).send();
-  } catch (error) {
-    console.error('删除评论失败:', error);
-    if (error instanceof Error) {
-      if (error.message === '评论不存在') {
-        return res.status(404).json({ error: error.message });
-      }
+    // 验证评论ID
+    const commentId = parseInt(id);
+    if (isNaN(commentId)) {
+      return res.status(400).json(createResponse(false, '评论ID无效', null, {
+        code: 'COMMENT_ID_INVALID',
+        details: '请提供有效的评论ID'
+      }));
     }
-    res.status(500).json({ error: '删除评论失败' });
+
+    // 获取评论详情
+    const comment = await get(`
+      SELECT 
+        c.id, c.content, c.user_id, c.article_id, c.parent_id, c.likes,
+        c.created_at, c.updated_at,
+        u.username, u.avatar
+      FROM comments c
+      JOIN users u ON c.user_id = u.id
+      WHERE c.id = ?
+    `, [commentId]);
+
+    if (!comment) {
+      return res.status(404).json(createResponse(false, '评论不存在', null, {
+        code: 'COMMENT_NOT_FOUND',
+        details: '指定的评论不存在'
+      }));
+    }
+
+    const commentResponse = {
+      id: comment.id,
+      content: comment.content,
+      user_id: comment.user_id,
+      article_id: comment.article_id,
+      parent_id: comment.parent_id,
+      likes: comment.likes,
+      created_at: comment.created_at,
+      updated_at: comment.updated_at,
+      user: {
+        id: comment.user_id,
+        username: comment.username,
+        avatar: comment.avatar
+      }
+    };
+
+    // 如果用户已登录，检查点赞状态
+    if (req.user) {
+      const likedComment = await get(
+        'SELECT id FROM comment_likes WHERE user_id = ? AND comment_id = ?',
+        [req.user.userId, commentId]
+      );
+      commentResponse.liked = !!likedComment;
+    }
+
+    res.json(createResponse(true, '获取评论详情成功', {
+      comment: commentResponse
+    }));
+  } catch (error) {
+    console.error('获取评论详情失败:', error);
+    res.status(500).json(createResponse(false, '服务器内部错误', null, {
+      code: 'INTERNAL_SERVER_ERROR',
+      details: '获取评论详情时发生错误'
+    }));
   }
 });
 

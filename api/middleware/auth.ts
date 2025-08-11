@@ -1,134 +1,162 @@
+/**
+ * JWT认证中间件
+ * 验证用户身份和权限
+ */
 import { Request, Response, NextFunction } from 'express';
-import { verifyToken, verifyAccessToken, getUserById } from '../services/userService.js';
-import { isTokenBlacklisted } from '../services/tokenBlacklistService.js';
-import { UserResponse } from '../models/User.js';
+import jwt from 'jsonwebtoken';
+
+// JWT密钥（生产环境应该使用环境变量）
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 // 扩展Request接口以包含用户信息
 declare global {
   namespace Express {
     interface Request {
-      user?: UserResponse;
+      user?: {
+        userId: number;
+        email: string;
+        role: string;
+      };
     }
   }
 }
 
-// JWT认证中间件
-export const authenticateToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+/**
+ * JWT认证中间件
+ */
+export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   try {
+    // 从请求头获取令牌
     const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+    
+    if (!authHeader) {
+      res.status(401).json({
+        success: false,
+        message: '未提供认证令牌',
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+
+    // 检查令牌格式 (Bearer token)
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
     
     if (!token) {
       res.status(401).json({
         success: false,
-        error: '访问令牌缺失'
+        message: '令牌格式不正确',
+        timestamp: new Date().toISOString()
       });
       return;
     }
+
+    // 验证令牌
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
     
-    // 检查token是否在黑名单中
-    const isBlacklisted = await isTokenBlacklisted(token);
-    if (isBlacklisted) {
+    // 将用户信息添加到请求对象
+    req.user = {
+      userId: decoded.userId,
+      email: decoded.email,
+      role: decoded.role
+    };
+
+    next();
+  } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
       res.status(401).json({
         success: false,
-        error: '访问令牌已失效'
+        message: '令牌已过期',
+        timestamp: new Date().toISOString()
       });
-      return;
-    }
-    
-    // 优先使用新的access token验证，向后兼容旧token
-    let decoded = verifyAccessToken(token);
-    if (!decoded) {
-      decoded = verifyToken(token); // 向后兼容
-    }
-    
-    if (!decoded) {
-      res.status(403).json({
+    } else if (error instanceof jwt.JsonWebTokenError) {
+      res.status(401).json({
         success: false,
-        error: '无效的访问令牌'
+        message: '无效的令牌',
+        timestamp: new Date().toISOString()
       });
-      return;
-    }
-    
-    const user = await getUserById(decoded.userId);
-    
-    if (!user) {
-      res.status(403).json({
+    } else {
+      console.error('认证中间件错误:', error);
+      res.status(500).json({
         success: false,
-        error: '用户不存在'
+        message: '服务器内部错误',
+        timestamp: new Date().toISOString()
       });
-      return;
     }
-    
-    req.user = user;
-    next();
-  } catch (error) {
-    console.error('Authentication error:', error);
-    res.status(500).json({
-      success: false,
-      error: '认证过程中发生错误'
-    });
-    return;
   }
 };
 
-// 可选的JWT认证中间件（不强制要求登录）
-export const optionalAuth = async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1];
-    
-    if (token) {
-      // 检查token是否在黑名单中
-      const isBlacklisted = await isTokenBlacklisted(token);
-      if (!isBlacklisted) {
-        // 优先使用新的access token验证，向后兼容旧token
-        let decoded = verifyAccessToken(token);
-        if (!decoded) {
-          decoded = verifyToken(token); // 向后兼容
-        }
-        
-        if (decoded) {
-          const user = await getUserById(decoded.userId);
-          if (user) {
-            req.user = user;
-          }
-        }
-      }
-    }
-    
-    next();
-  } catch (error) {
-    console.error('Optional auth error:', error);
-    next(); // 继续执行，不阻止请求
-  }
-};
-
-// 角色权限检查中间件
-export const requireRole = (roles: string[]) => {
+/**
+ * 角色权限中间件
+ * @param roles 允许的角色列表
+ */
+export const roleMiddleware = (roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
-    if (!req.user) {
-      res.status(401).json({
+    try {
+      if (!req.user) {
+        res.status(401).json({
+          success: false,
+          message: '用户未认证',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      if (!roles.includes(req.user.role)) {
+        res.status(403).json({
+          success: false,
+          message: '权限不足',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      next();
+    } catch (error) {
+      console.error('角色权限中间件错误:', error);
+      res.status(500).json({
         success: false,
-        error: '需要登录'
+        message: '服务器内部错误',
+        timestamp: new Date().toISOString()
       });
-      return;
     }
-    
-    if (!roles.includes(req.user.role)) {
-      res.status(403).json({
-        success: false,
-        error: '权限不足'
-      });
-      return;
-    }
-    
-    next();
   };
 };
 
-// 管理员权限检查
-export const requireAdmin = requireRole(['admin']);
+/**
+ * 可选认证中间件（不强制要求登录）
+ */
+export const optionalAuthMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader) {
+      // 没有令牌，继续执行但不设置用户信息
+      next();
+      return;
+    }
 
-// 作者权限检查（管理员和作者都可以）
-export const requireAuthor = requireRole(['admin', 'author']);
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+    
+    if (!token) {
+      next();
+      return;
+    }
+
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      req.user = {
+        userId: decoded.userId,
+        email: decoded.email,
+        role: decoded.role
+      };
+    } catch (error) {
+      // 令牌无效，但不阻止请求继续
+      console.warn('可选认证中间件：令牌无效', error);
+    }
+
+    next();
+  } catch (error) {
+    console.error('可选认证中间件错误:', error);
+    next(); // 即使出错也继续执行
+  }
+};
