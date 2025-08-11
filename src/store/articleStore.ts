@@ -219,12 +219,8 @@ export const useArticleStore = create<ArticleState>()(
           return false;
         }
 
-        const response = await fetch(`${API_BASE_URL}/articles`, {
+        const response = await articleAPI.authenticatedFetch('/articles', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
           body: JSON.stringify(articleData),
         });
 
@@ -257,12 +253,8 @@ export const useArticleStore = create<ArticleState>()(
           return false;
         }
 
-        const response = await fetch(`${API_BASE_URL}/articles/${id}`, {
+        const response = await articleAPI.authenticatedFetch(`/articles/${id}`, {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
           body: JSON.stringify(articleData),
         });
 
@@ -371,7 +363,7 @@ export const useArticleStore = create<ArticleState>()(
       }
     },
 
-    // 点赞文章
+    // 点赞/取消点赞文章
     likeArticle: async (id: number): Promise<boolean> => {
       try {
         const token = useAuthStore.getState().token;
@@ -390,30 +382,78 @@ export const useArticleStore = create<ArticleState>()(
         const data = await response.json();
 
         if (data.success) {
-          // 更新文章的点赞数
+          // 更新文章的点赞数和点赞状态
           const articles = get().articles.map(article => 
-            article.id === id ? { ...article, likes: data.data.likes } : article
+            article.id === id ? { 
+              ...article, 
+              likes: data.data.likes,
+              isLiked: data.data.liked 
+            } : article
           );
           set({ articles });
           
-          // 如果是当前文章，也更新当前文章的点赞数
+          // 如果是当前文章，也更新当前文章的点赞数和状态
           if (get().currentArticle?.id === id) {
             set({ 
               currentArticle: { 
                 ...get().currentArticle!, 
-                likes: data.data.likes 
+                likes: data.data.likes,
+                isLiked: data.data.liked
               } 
             });
           }
           
           return true;
         } else {
-          set({ error: data.message || '点赞失败' });
+          set({ error: data.message || '点赞操作失败' });
           return false;
         }
       } catch (error) {
-        console.error('点赞失败:', error);
+        console.error('点赞操作失败:', error);
         set({ error: '网络请求失败' });
+        return false;
+      }
+    },
+
+    // 检查文章点赞状态
+    checkArticleLikeStatus: async (id: number): Promise<boolean> => {
+      try {
+        const token = useAuthStore.getState().token;
+        if (!token) {
+          return false;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/articles/${id}/like/status`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // 更新文章的点赞状态
+          const articles = get().articles.map(article => 
+            article.id === id ? { ...article, isLiked: data.data.liked } : article
+          );
+          set({ articles });
+          
+          // 如果是当前文章，也更新当前文章的点赞状态
+          if (get().currentArticle?.id === id) {
+            set({ 
+              currentArticle: { 
+                ...get().currentArticle!, 
+                isLiked: data.data.liked
+              } 
+            });
+          }
+          
+          return data.data.liked;
+        }
+        
+        return false;
+      } catch (error) {
+        console.error('检查点赞状态失败:', error);
         return false;
       }
     },

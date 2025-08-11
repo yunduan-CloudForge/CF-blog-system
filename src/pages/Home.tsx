@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { LogIn, UserPlus, LogOut, User, BookOpen, PenTool } from 'lucide-react';
+import { LogIn, UserPlus, LogOut, User, BookOpen, PenTool, Shield } from 'lucide-react';
 import { useAuthStore, authAPI } from '../store/authStore';
 
 export default function Home() {
@@ -53,6 +53,13 @@ export default function Home() {
                       {user.role === 'admin' ? '管理员' : user.role === 'author' ? '作者' : '用户'}
                     </span>
                   </div>
+                  <Link
+                    to="/user/center"
+                    className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    <User className="h-4 w-4" />
+                    <span>用户中心</span>
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 transition-colors"
@@ -99,7 +106,7 @@ export default function Home() {
             {isAuthenticated && user ? (
               <div className="space-y-6">
                 {/* 快速操作 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
                   <Link
                     to="/articles"
                     className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow"
@@ -123,6 +130,21 @@ export default function Home() {
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900">写文章</h3>
                           <p className="text-gray-600">创建新的博客文章</p>
+                        </div>
+                      </div>
+                    </Link>
+                  )}
+                  
+                  {(user.role === 'admin' || user.role === 'author') && (
+                    <Link
+                      to="/admin/dashboard"
+                      className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Shield className="h-8 w-8 text-purple-600" />
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">管理面板</h3>
+                          <p className="text-gray-600">访问系统管理仪表盘</p>
                         </div>
                       </div>
                     </Link>

@@ -13,9 +13,11 @@ declare global {
   namespace Express {
     interface Request {
       user?: {
+        id: number;
         userId: number;
         email: string;
         role: string;
+        username?: string;
       };
     }
   }
@@ -55,9 +57,11 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
     
     // 将用户信息添加到请求对象
     req.user = {
+      id: decoded.userId,
       userId: decoded.userId,
       email: decoded.email,
-      role: decoded.role
+      role: decoded.role,
+      username: decoded.username
     };
 
     next();
@@ -145,9 +149,11 @@ export const optionalAuthMiddleware = (req: Request, res: Response, next: NextFu
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as any;
       req.user = {
+        id: decoded.userId,
         userId: decoded.userId,
         email: decoded.email,
-        role: decoded.role
+        role: decoded.role,
+        username: decoded.username
       };
     } catch (error) {
       // 令牌无效，但不阻止请求继续

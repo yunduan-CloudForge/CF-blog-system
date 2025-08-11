@@ -2,7 +2,7 @@
  * 文章详情页面
  * 显示完整文章内容和评论
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -33,10 +33,15 @@ const ArticleDetail: React.FC = () => {
     error,
     fetchArticleById,
     deleteArticle,
-    likeArticle
+    likeArticle,
+    checkArticleLikeStatus
   } = useArticleStore();
   
   const { user, isAuthenticated } = useAuthStore();
+  
+  // 本地状态
+  const [isLiked, setIsLiked] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
   
 
   
@@ -46,6 +51,24 @@ const ArticleDetail: React.FC = () => {
       fetchArticleById(parseInt(id));
     }
   }, [id]);
+  
+  // 检查用户点赞状态
+  useEffect(() => {
+    const checkLikeStatus = async () => {
+      if (id && isAuthenticated) {
+        try {
+          const liked = await checkArticleLikeStatus(parseInt(id));
+          setIsLiked(liked);
+        } catch (error) {
+          console.error('检查点赞状态失败:', error);
+        }
+      } else {
+        setIsLiked(false);
+      }
+    };
+    
+    checkLikeStatus();
+  }, [id, isAuthenticated, checkArticleLikeStatus]);
   
 
   
@@ -65,7 +88,21 @@ const ArticleDetail: React.FC = () => {
       navigate('/login');
       return;
     }
-    await likeArticle(parseInt(id!));
+    
+    if (isLiking) return;
+    
+    setIsLiking(true);
+    
+    try {
+      const result = await likeArticle(parseInt(id!));
+      if (result) {
+        setIsLiked(!isLiked);
+      }
+    } catch (error) {
+      console.error('点赞操作失败:', error);
+    } finally {
+      setIsLiking(false);
+    }
   };
   
   // 格式化日期
@@ -220,10 +257,26 @@ const ArticleDetail: React.FC = () => {
             <div className="flex justify-center">
               <button
                 onClick={handleLikeArticle}
-                className="flex items-center space-x-2 px-6 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={isLiking || !isAuthenticated}
+                className={`flex items-center space-x-2 px-6 py-3 rounded-lg transition-all duration-200 ${
+                  isLiked
+                    ? 'bg-red-50 border border-red-200 text-red-600 hover:bg-red-100'
+                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-red-600 hover:border-red-200'
+                } disabled:opacity-50 disabled:cursor-not-allowed ${
+                  isLiking ? 'scale-95' : 'hover:scale-105'
+                }`}
+                title={!isAuthenticated ? '请先登录' : (isLiked ? '取消点赞' : '点赞')}
               >
-                <Heart className="w-5 h-5 text-red-500" />
-                <span className="font-medium">赞 ({currentArticle.likes})</span>
+                <Heart 
+                  className={`w-5 h-5 transition-all duration-200 ${
+                    isLiked ? 'fill-current text-red-500' : 'text-red-500'
+                  } ${
+                    isLiking ? 'animate-pulse' : ''
+                  }`} 
+                />
+                <span className="font-medium">
+                  {isLiked ? '已赞' : '点赞'} ({currentArticle.likes})
+                </span>
               </button>
             </div>
           </div>
@@ -233,6 +286,7 @@ const ArticleDetail: React.FC = () => {
         <div className="mt-8">
           <CommentSection 
             articleId={parseInt(id!)}
+            maxDepth={10}
             className="bg-white rounded-lg shadow-sm border"
           />
         </div>

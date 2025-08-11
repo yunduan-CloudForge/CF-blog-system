@@ -5,6 +5,7 @@
 import { Router, type Request, type Response } from 'express';
 import { query, run, get } from '../database/connection';
 import { authMiddleware } from '../middleware/auth';
+import { logDetailedAction, logSimpleAction } from '../middleware/logger';
 
 const router = Router();
 
@@ -21,7 +22,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       search = '',
       category = '',
       tag = '',
-      status = 'published',
+      status = '',
       author = ''
     } = req.query;
 
@@ -34,7 +35,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     let queryParams = [];
 
     // 状态筛选
-    if (status) {
+    if (status && status !== 'all') {
       whereConditions.push('a.status = ?');
       queryParams.push(status);
     }
@@ -144,6 +145,128 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 });
 
 /**
+ * 获取文章统计数据
+ * GET /api/articles/stats
+ * 支持按作者筛选
+ * 注意：这个路由必须放在 /:id 路由之前，避免 'stats' 被当作文章ID处理
+ */
+router.get('/stats', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { author } = req.query;
+    const userId = (req as any).user.userId;
+    
+    // 如果指定了作者ID，检查权限（只能查看自己的统计或管理员权限）
+    const targetAuthorId = author ? parseInt(author as string) : userId;
+    if (targetAuthorId !== userId) {
+      // 这里可以添加管理员权限检查
+      const user = await get('SELECT role FROM users WHERE id = ?', [userId]);
+      if (!user || user.role !== 'admin') {
+        res.status(403).json({
+          success: false,
+          message: '无权限查看其他用户的统计数据',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+    }
+
+    // 获取基础统计数据
+    const basicStats = await get(`
+      SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN status = 'published' THEN 1 ELSE 0 END) as published,
+        SUM(CASE WHEN status = 'draft' THEN 1 ELSE 0 END) as draft,
+        SUM(CASE WHEN status = 'archived' THEN 1 ELSE 0 END) as archived,
+        SUM(views) as totalViews,
+        SUM(likes) as totalLikes
+      FROM articles 
+      WHERE author_id = ?
+    `, [targetAuthorId]);
+
+    // 获取评论统计（如果有评论表的话）
+    let totalComments = 0;
+    try {
+      const commentStats = await get(`
+        SELECT COUNT(*) as total
+        FROM comments c
+        INNER JOIN articles a ON c.article_id = a.id
+        WHERE a.author_id = ?
+      `, [targetAuthorId]);
+      totalComments = commentStats?.total || 0;
+    } catch (error) {
+      // 如果评论表不存在，忽略错误
+      console.log('评论表可能不存在，跳过评论统计');
+    }
+
+    // 获取最近30天的文章发布趋势
+    const trendData = await query(`
+      SELECT 
+        DATE(created_at) as date,
+        COUNT(*) as count
+      FROM articles 
+      WHERE author_id = ? 
+        AND created_at >= datetime('now', '-30 days')
+        AND status = 'published'
+      GROUP BY DATE(created_at)
+      ORDER BY date DESC
+    `, [targetAuthorId]);
+
+    // 获取分类分布
+    const categoryStats = await query(`
+      SELECT 
+        c.name as category_name,
+        COUNT(a.id) as article_count
+      FROM categories c
+      LEFT JOIN articles a ON c.id = a.category_id AND a.author_id = ?
+      WHERE a.id IS NOT NULL
+      GROUP BY c.id, c.name
+      ORDER BY article_count DESC
+    `, [targetAuthorId]);
+
+    // 获取热门文章（按浏览量排序）
+    const popularArticles = await query(`
+      SELECT 
+        id,
+        title,
+        views,
+        likes,
+        created_at
+      FROM articles 
+      WHERE author_id = ? AND status = 'published'
+      ORDER BY views DESC
+      LIMIT 5
+    `, [targetAuthorId]);
+
+    const stats = {
+      total: basicStats?.total || 0,
+      published: basicStats?.published || 0,
+      draft: basicStats?.draft || 0,
+      archived: basicStats?.archived || 0,
+      totalViews: basicStats?.totalViews || 0,
+      totalLikes: basicStats?.totalLikes || 0,
+      totalComments,
+      trendData,
+      categoryStats,
+      popularArticles
+    };
+
+    res.json({
+      success: true,
+      message: '获取统计数据成功',
+      data: stats,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('获取统计数据错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器内部错误',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
  * 获取单篇文章详情
  * GET /api/articles/:id
  */
@@ -207,7 +330,7 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
  * 创建文章
  * POST /api/articles
  */
-router.post('/', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+router.post('/', authMiddleware, logDetailedAction('create_article', 'articles'), async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = (req as any).user.userId;
     const { title, content, summary, status = 'draft', category_id, tag_ids = [] } = req.body;
@@ -237,10 +360,45 @@ router.post('/', authMiddleware, async (req: Request, res: Response): Promise<vo
       }
     }
 
+    // 获取创建后的文章数据
+    const createdArticle = await get(`
+      SELECT 
+        a.*,
+        u.username as author_name,
+        u.avatar as author_avatar,
+        c.name as category_name
+      FROM articles a
+      LEFT JOIN users u ON a.author_id = u.id
+      LEFT JOIN categories c ON a.category_id = c.id
+      WHERE a.id = ?
+    `, [articleId]);
+
+    // 获取文章标签
+    const articleTags = await query(`
+      SELECT t.id, t.name, t.color
+      FROM tags t
+      JOIN article_tags at ON t.id = at.tag_id
+      WHERE at.article_id = ?
+    `, [articleId]);
+
+    const articleWithTags = {
+      ...createdArticle,
+      author: {
+        id: createdArticle.author_id,
+        username: createdArticle.author_name,
+        avatar: createdArticle.author_avatar
+      },
+      category: createdArticle.category_id ? {
+        id: createdArticle.category_id,
+        name: createdArticle.category_name
+      } : null,
+      tags: articleTags
+    };
+
     res.status(201).json({
       success: true,
       message: '文章创建成功',
-      data: { articleId },
+      data: articleWithTags,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
@@ -257,7 +415,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response): Promise<vo
  * 更新文章
  * PUT /api/articles/:id
  */
-router.put('/:id', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+router.put('/:id', authMiddleware, logDetailedAction('update_article', 'articles'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const userId = (req as any).user.userId;
@@ -300,9 +458,45 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response): Promise<
       }
     }
 
+    // 获取更新后的文章数据
+    const updatedArticle = await get(`
+      SELECT 
+        a.*,
+        u.username as author_name,
+        u.avatar as author_avatar,
+        c.name as category_name
+      FROM articles a
+      LEFT JOIN users u ON a.author_id = u.id
+      LEFT JOIN categories c ON a.category_id = c.id
+      WHERE a.id = ?
+    `, [id]);
+
+    // 获取文章标签
+    const articleTags = await query(`
+      SELECT t.id, t.name, t.color
+      FROM tags t
+      JOIN article_tags at ON t.id = at.tag_id
+      WHERE at.article_id = ?
+    `, [id]);
+
+    const articleWithTags = {
+      ...updatedArticle,
+      author: {
+        id: updatedArticle.author_id,
+        username: updatedArticle.author_name,
+        avatar: updatedArticle.author_avatar
+      },
+      category: updatedArticle.category_id ? {
+        id: updatedArticle.category_id,
+        name: updatedArticle.category_name
+      } : null,
+      tags: articleTags
+    };
+
     res.json({
       success: true,
       message: '文章更新成功',
+      data: articleWithTags,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
@@ -319,7 +513,7 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response): Promise<
  * 删除文章
  * DELETE /api/articles/:id
  */
-router.delete('/:id', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+router.delete('/:id', authMiddleware, logDetailedAction('delete_article', 'articles'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const userId = (req as any).user.userId;
@@ -365,15 +559,25 @@ router.delete('/:id', authMiddleware, async (req: Request, res: Response): Promi
 });
 
 /**
- * 点赞文章
+ * 点赞/取消点赞文章
  * POST /api/articles/:id/like
  */
 router.post('/:id/like', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: '用户未认证',
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
 
     // 检查文章是否存在
-    const article = await get('SELECT likes FROM articles WHERE id = ?', [id]);
+    const article = await get('SELECT id, likes FROM articles WHERE id = ?', [id]);
     if (!article) {
       res.status(404).json({
         success: false,
@@ -383,18 +587,82 @@ router.post('/:id/like', authMiddleware, async (req: Request, res: Response): Pr
       return;
     }
 
-    // 增加点赞数
-    await run('UPDATE articles SET likes = likes + 1 WHERE id = ?', [id]);
-    const newLikes = article.likes + 1;
+    // 检查用户是否已经点赞
+    const existingLike = await get(
+      'SELECT id FROM article_likes WHERE user_id = ? AND article_id = ?',
+      [userId, id]
+    );
+
+    let newLikes: number;
+    let liked: boolean;
+    let message: string;
+
+    if (existingLike) {
+      // 用户已点赞，执行取消点赞
+      await run('DELETE FROM article_likes WHERE user_id = ? AND article_id = ?', [userId, id]);
+      await run('UPDATE articles SET likes = likes - 1 WHERE id = ?', [id]);
+      newLikes = Math.max(0, article.likes - 1);
+      liked = false;
+      message = '取消点赞成功';
+    } else {
+      // 用户未点赞，执行点赞
+      await run('INSERT INTO article_likes (user_id, article_id) VALUES (?, ?)', [userId, id]);
+      await run('UPDATE articles SET likes = likes + 1 WHERE id = ?', [id]);
+      newLikes = article.likes + 1;
+      liked = true;
+      message = '点赞成功';
+    }
 
     res.json({
       success: true,
-      message: '点赞成功',
-      data: { likes: newLikes },
+      message,
+      data: { 
+        likes: newLikes,
+        liked 
+      },
       timestamp: new Date().toISOString()
     });
   } catch (error) {
     console.error('点赞文章错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器内部错误',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
+ * 检查用户是否已点赞文章
+ * GET /api/articles/:id/like/status
+ */
+router.get('/:id/like/status', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: '用户未认证',
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+
+    // 检查用户是否已点赞
+    const existingLike = await get(
+      'SELECT id FROM article_likes WHERE user_id = ? AND article_id = ?',
+      [userId, id]
+    );
+
+    res.json({
+      success: true,
+      data: { liked: !!existingLike },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('检查点赞状态错误:', error);
     res.status(500).json({
       success: false,
       message: '服务器内部错误',

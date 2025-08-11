@@ -2,20 +2,16 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Heart, MessageCircle, MoreHorizontal, Reply, Trash2, Edit3, Flag, ChevronDown, ChevronUp, User } from 'lucide-react';
 import { Comment } from '../store/commentStore';
 import { useAuthStore } from '../store/authStore';
+import { useCommentContext } from '../contexts/CommentContext';
 import { commentUtils } from '../services/commentAPI';
 import CommentForm from './CommentForm';
-import CommentActions from './CommentActions';
 
 // 评论项Props接口
 interface CommentItemProps {
   comment: Comment;
   depth?: number;
-  maxDepth?: number;
   isCollapsed?: boolean;
   isExpanded?: boolean;
-  onReply?: (parentId: number) => void;
-  onLike?: (commentId: number) => void;
-  onDelete?: (commentId: number) => void;
   onToggleCollapse?: () => void;
   onToggleExpansion?: () => void;
   className?: string;
@@ -26,25 +22,36 @@ interface CommentItemProps {
 const CommentItem: React.FC<CommentItemProps> = ({
   comment,
   depth = 0,
-  maxDepth = 3,
   isCollapsed = false,
   isExpanded = false,
-  onReply,
-  onLike,
-  onDelete,
   onToggleCollapse,
   onToggleExpansion,
   className = '',
   showActions = true
 }) => {
-  // 状态管理
+  // 获取认证状态
   const { user, isAuthenticated } = useAuthStore();
-  const [showReplyForm, setShowReplyForm] = useState(false);
+  
+  // 获取评论上下文
+  const {
+    replyState,
+    startReply,
+    cancelReply,
+    setReplyContent,
+    submitReply,
+    clearError,
+    resetForm,
+    onLike,
+    onDelete,
+    onEdit,
+    maxDepth
+  } = useCommentContext();
+  
   const [isLiking, setIsLiking] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [localLiked, setLocalLiked] = useState(comment.is_liked || false);
-  const [localLikesCount, setLocalLikesCount] = useState(comment.likes_count || 0);
+  const [localLikesCount, setLocalLikesCount] = useState(comment.likes || 0);
   
   // 引用
   const menuRef = useRef<HTMLDivElement>(null);
@@ -98,17 +105,18 @@ const CommentItem: React.FC<CommentItemProps> = ({
       return;
     }
     
-    setShowReplyForm(!showReplyForm);
+    if (replyState.activeReplyId === comment.id) {
+      cancelReply();
+    } else {
+      startReply(comment.id);
+    }
   };
   
   // 处理回复提交
   const handleReplySubmit = async (content: string): Promise<boolean> => {
     try {
-      if (onReply) {
-        await onReply(comment.id);
-      }
-      setShowReplyForm(false);
-      return true;
+      const result = await submitReply(comment.id, content);
+      return result;
     } catch (error) {
       console.error('回复失败:', error);
       return false;
@@ -137,6 +145,23 @@ const CommentItem: React.FC<CommentItemProps> = ({
     setShowMenu(false);
   };
   
+  // 处理编辑提交
+  const handleEditSubmit = async (content: string): Promise<boolean> => {
+    try {
+      if (onEdit) {
+        const result = await onEdit(comment.id, content);
+        if (result) {
+          setIsEditing(false);
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error('编辑失败:', error);
+      return false;
+    }
+  };
+  
   // 处理举报
   const handleReport = () => {
     // TODO: 实现举报功能
@@ -153,39 +178,91 @@ const CommentItem: React.FC<CommentItemProps> = ({
   // 判断是否可以编辑（仅作者）
   const canEdit = isAuthor;
   
-  // 计算缩进样式
-  const indentClass = depth > 0 ? `ml-${Math.min(depth * 4, 16)}` : '';
-  
-  // 格式化时间
-  const formatTime = (dateString: string) => {
-    return commentUtils.formatCommentTime(dateString);
+  // 计算缩进样式 - 使用固定的Tailwind类名
+  const getIndentClass = (depth: number) => {
+    switch (depth) {
+      case 0: return '';
+      case 1: return 'ml-4';
+      case 2: return 'ml-8';
+      case 3: return 'ml-12';
+      default: return 'ml-16';
+    }
   };
+  
+  const indentClass = getIndentClass(depth);
+  
+  // 获取时间信息
+  const getTimeInfo = (dateString: string) => {
+    return commentUtils.getDetailedTimeInfo(dateString);
+  };
+  
+  const timeInfo = getTimeInfo(comment.created_at);
+  const editTimeInfo = comment.updated_at && comment.updated_at !== comment.created_at 
+    ? getTimeInfo(comment.updated_at) 
+    : null;
   
   // 渲染用户头像
   const renderAvatar = () => {
+    const username = comment.user?.username || '匿名用户';
+    const avatarColor = commentUtils.generateAvatarPlaceholder(username);
+    
     if (comment.user?.avatar) {
       return (
-        <img
-          src={comment.user.avatar}
-          alt={comment.user.username}
-          className="w-8 h-8 rounded-full object-cover"
-        />
+        <div className="relative group">
+          <img
+            src={comment.user.avatar}
+            alt={username}
+            className="w-8 h-8 rounded-full object-cover border-2 border-gray-200 group-hover:border-blue-300 transition-colors"
+            title={`${username}的头像`}
+          />
+          {comment.user?.role === 'admin' && (
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white" 
+                 title="管理员" />
+          )}
+        </div>
       );
     }
     
     return (
-      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-        <User className="w-4 h-4 text-white" />
+      <div 
+        className="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium text-sm border-2 border-gray-200 hover:border-blue-300 transition-colors group"
+        style={{ backgroundColor: avatarColor }}
+        title={`${username}的头像`}
+      >
+        {username.charAt(0).toUpperCase()}
+        {comment.user?.role === 'admin' && (
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white" 
+               title="管理员" />
+        )}
       </div>
     );
   };
   
+  // 格式化评论内容
+  const formatContent = (content: string) => {
+    if (!content) return content;
+    
+    // 处理链接
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    let formattedContent = content.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-700 underline">$1</a>');
+    
+    // 处理@用户提及
+    const mentionRegex = /@([\w\u4e00-\u9fa5]+)/g;
+    formattedContent = formattedContent.replace(mentionRegex, '<span class="text-blue-600 font-medium bg-blue-50 px-1 rounded">@$1</span>');
+    
+    // 处理换行
+    formattedContent = formattedContent.replace(/\n/g, '<br>');
+    
+    return formattedContent;
+  };
+
   // 渲染评论内容
   const renderContent = () => {
-    if (comment.is_deleted) {
+    if (comment.deleted) {
       return (
-        <div className="text-gray-400 italic py-2">
-          此评论已被删除
+        <div className="text-gray-400 italic py-2 flex items-center gap-2">
+          <Trash2 className="w-4 h-4" />
+          <span>此评论已被删除</span>
         </div>
       );
     }
@@ -195,11 +272,8 @@ const CommentItem: React.FC<CommentItemProps> = ({
         <CommentForm
           articleId={comment.article_id}
           placeholder="编辑评论..."
-          onSubmit={async (content) => {
-            // TODO: 实现编辑评论API
-            setIsEditing(false);
-            return true;
-          }}
+          initialContent={comment.content}
+          onSubmit={handleEditSubmit}
           onCancel={() => setIsEditing(false)}
           autoFocus
           className="mt-2"
@@ -208,15 +282,33 @@ const CommentItem: React.FC<CommentItemProps> = ({
     }
     
     return (
-      <div className="text-gray-800 leading-relaxed whitespace-pre-wrap break-words">
-        {comment.content}
-      </div>
+      <div 
+        className="text-gray-800 leading-relaxed break-words prose prose-sm max-w-none"
+        dangerouslySetInnerHTML={{ __html: formatContent(comment.content) }}
+      />
     );
   };
   
+  // 获取层级样式
+  const getDepthStyles = (depth: number) => {
+    const baseStyles = "rounded-lg transition-all duration-200";
+    switch (depth) {
+      case 0:
+        return `${baseStyles} bg-white border border-gray-200 p-4`;
+      case 1:
+        return `${baseStyles} bg-blue-50 border border-blue-200 p-3 ml-4`;
+      case 2:
+        return `${baseStyles} bg-green-50 border border-green-200 p-3 ml-8`;
+      case 3:
+        return `${baseStyles} bg-yellow-50 border border-yellow-200 p-3 ml-12`;
+      default:
+        return `${baseStyles} bg-gray-50 border border-gray-200 p-3 ml-16`;
+    }
+  };
+
   return (
-    <div className={`comment-item ${className}`}>
-      <div className="flex gap-3">
+    <div className={`comment-item ${className} ${getDepthStyles(depth)}`}>
+      <div className="flex gap-3 relative">
         {/* 用户头像 */}
         <div className="flex-shrink-0">
           {renderAvatar()}
@@ -226,6 +318,14 @@ const CommentItem: React.FC<CommentItemProps> = ({
         <div className="flex-1 min-w-0">
           {/* 用户信息和时间 */}
           <div className="flex items-center gap-2 mb-1">
+            {/* 回复层级指示器 */}
+            {depth > 0 && (
+              <div className="flex items-center gap-1 text-xs text-gray-400">
+                <Reply className="w-3 h-3" />
+                <span>回复</span>
+              </div>
+            )}
+            
             <span className="font-medium text-gray-900">
               {comment.user?.username || '匿名用户'}
             </span>
@@ -237,15 +337,29 @@ const CommentItem: React.FC<CommentItemProps> = ({
               </span>
             )}
             
+            {/* 层级标识 */}
+            {depth > 0 && (
+              <span className="px-1.5 py-0.5 text-xs bg-blue-100 text-blue-600 rounded">
+                L{depth}
+              </span>
+            )}
+            
             {/* 时间 */}
-            <span className="text-sm text-gray-500">
-              {formatTime(comment.created_at)}
+            <span 
+              className="text-sm text-gray-500 hover:text-gray-700 cursor-help transition-colors"
+              title={timeInfo.tooltip}
+            >
+              {timeInfo.relative}
             </span>
             
             {/* 编辑标识 */}
-            {comment.updated_at && comment.updated_at !== comment.created_at && (
-              <span className="text-xs text-gray-400">
-                已编辑
+            {editTimeInfo && (
+              <span 
+                className="text-xs text-orange-500 hover:text-orange-600 cursor-help transition-colors flex items-center gap-1"
+                title={`最后编辑于 ${editTimeInfo.absolute}`}
+              >
+                <Edit3 className="w-3 h-3" />
+                <span>已编辑</span>
               </span>
             )}
           </div>
@@ -256,54 +370,61 @@ const CommentItem: React.FC<CommentItemProps> = ({
           </div>
           
           {/* 操作按钮 */}
-          {showActions && !comment.is_deleted && !isEditing && (
-            <div className="flex items-center gap-4">
+          {showActions && !comment.deleted && !isEditing && (
+            <div className="flex items-center gap-2">
               {/* 点赞按钮 */}
               <button
                 onClick={handleLike}
                 disabled={!isAuthenticated || isLiking}
-                className={`flex items-center gap-1 text-sm transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                   localLiked
-                    ? 'text-red-500 hover:text-red-600'
-                    : 'text-gray-500 hover:text-red-500'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    ? 'text-red-600 bg-red-50 hover:bg-red-100 border border-red-200'
+                    : 'text-gray-600 bg-gray-50 hover:bg-red-50 hover:text-red-600 border border-gray-200 hover:border-red-200'
+                } disabled:opacity-50 disabled:cursor-not-allowed ${
+                  isLiking ? 'scale-95' : 'hover:scale-105'
+                }`}
+                title={isAuthenticated ? (localLiked ? '取消点赞' : '点赞') : '请先登录'}
               >
                 <Heart
-                  className={`w-4 h-4 transition-all ${
-                    localLiked ? 'fill-current' : ''
+                  className={`w-4 h-4 transition-all duration-200 ${
+                    localLiked ? 'fill-current scale-110' : ''
                   } ${
-                    isLiking ? 'scale-110' : ''
+                    isLiking ? 'animate-pulse' : ''
                   }`}
                 />
-                {localLikesCount > 0 && (
-                  <span>{localLikesCount}</span>
-                )}
+                <span>{localLikesCount > 0 ? localLikesCount : '赞'}</span>
               </button>
               
               {/* 回复按钮 */}
               <button
                 onClick={handleReply}
-                className="flex items-center gap-1 text-sm text-gray-500 hover:text-blue-500 transition-colors"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  replyState.activeReplyId === comment.id
+                    ? 'text-blue-600 bg-blue-50 border border-blue-200'
+                    : 'text-gray-600 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 border border-gray-200 hover:border-blue-200'
+                } hover:scale-105`}
+                title={isAuthenticated ? '回复评论' : '请先登录后回复'}
               >
                 <Reply className="w-4 h-4" />
-                <span>回复</span>
+                <span>{replyState.activeReplyId === comment.id ? '取消' : '回复'}</span>
               </button>
               
               {/* 折叠按钮（有回复时显示） */}
               {comment.replies && comment.replies.length > 0 && onToggleCollapse && (
                 <button
                   onClick={onToggleCollapse}
-                  className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 transition-all duration-200 hover:scale-105"
+                  title={isCollapsed ? '展开回复' : '折叠回复'}
                 >
                   {isCollapsed ? (
                     <>
                       <ChevronDown className="w-4 h-4" />
-                      <span>展开 {comment.replies.length} 条回复</span>
+                      <span>展开 {comment.replies.length}</span>
                     </>
                   ) : (
                     <>
                       <ChevronUp className="w-4 h-4" />
-                      <span>折叠回复</span>
+                      <span>折叠</span>
                     </>
                   )}
                 </button>
@@ -313,21 +434,24 @@ const CommentItem: React.FC<CommentItemProps> = ({
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setShowMenu(!showMenu)}
-                  className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                  className={`p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all duration-200 ${
+                    showMenu ? 'bg-gray-100 text-gray-600' : ''
+                  }`}
+                  title="更多操作"
                 >
                   <MoreHorizontal className="w-4 h-4" />
                 </button>
                 
                 {showMenu && (
-                  <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[120px]">
+                  <div className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-xl shadow-xl py-2 z-20 min-w-[140px] animate-in slide-in-from-top-2 duration-200">
                     {/* 编辑 */}
                     {canEdit && (
                       <button
                         onClick={handleEdit}
-                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                        className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-3 transition-colors duration-200"
                       >
-                        <Edit3 className="w-3 h-3" />
-                        编辑
+                        <Edit3 className="w-4 h-4" />
+                        <span>编辑评论</span>
                       </button>
                     )}
                     
@@ -335,21 +459,26 @@ const CommentItem: React.FC<CommentItemProps> = ({
                     {canDelete && (
                       <button
                         onClick={handleDelete}
-                        className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                        className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 hover:text-red-700 flex items-center gap-3 transition-colors duration-200"
                       >
-                        <Trash2 className="w-3 h-3" />
-                        删除
+                        <Trash2 className="w-4 h-4" />
+                        <span>删除评论</span>
                       </button>
+                    )}
+                    
+                    {/* 分割线 */}
+                    {(canEdit || canDelete) && !isAuthor && (
+                      <div className="my-1 border-t border-gray-100" />
                     )}
                     
                     {/* 举报 */}
                     {!isAuthor && (
                       <button
                         onClick={handleReport}
-                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                        className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 flex items-center gap-3 transition-colors duration-200"
                       >
-                        <Flag className="w-3 h-3" />
-                        举报
+                        <Flag className="w-4 h-4" />
+                        <span>举报评论</span>
                       </button>
                     )}
                   </div>
@@ -359,16 +488,28 @@ const CommentItem: React.FC<CommentItemProps> = ({
           )}
           
           {/* 回复表单 */}
-          {showReplyForm && (
+          {replyState.activeReplyId === comment.id && (
             <div className="mt-3">
               <CommentForm
                 articleId={comment.article_id}
                 parentId={comment.id}
                 placeholder={`回复 @${comment.user?.username}...`}
                 onSubmit={handleReplySubmit}
-                onCancel={() => setShowReplyForm(false)}
+                onCancel={cancelReply}
                 autoFocus
+                loading={replyState.submitting}
               />
+              {replyState.error && (
+                <div className="mt-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-2 flex items-center justify-between">
+                  <span>{replyState.error}</span>
+                  <button
+                    onClick={clearError}
+                    className="text-red-400 hover:text-red-600 ml-2"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -378,4 +519,4 @@ const CommentItem: React.FC<CommentItemProps> = ({
 };
 
 export default CommentItem;
-export type { CommentItemProps
+export type { CommentItemProps };

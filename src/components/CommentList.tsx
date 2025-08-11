@@ -9,9 +9,6 @@ interface CommentListProps {
   loading?: boolean;
   hasMore?: boolean;
   onLoadMore?: () => void;
-  onReply?: (parentId: number) => void;
-  onLike?: (commentId: number) => void;
-  onDelete?: (commentId: number) => void;
   className?: string;
   maxDepth?: number;
   sortBy?: 'newest' | 'oldest' | 'likes';
@@ -31,9 +28,6 @@ const CommentList: React.FC<CommentListProps> = ({
   loading = false,
   hasMore = false,
   onLoadMore,
-  onReply,
-  onLike,
-  onDelete,
   className = '',
   maxDepth = 3,
   sortBy = 'newest',
@@ -44,8 +38,47 @@ const CommentList: React.FC<CommentListProps> = ({
   const [collapsedThreads, setCollapsedThreads] = useState<Set<number>>(new Set());
   const [loadingMore, setLoadingMore] = useState(false);
   
-  // 构建评论树结构
-  const buildCommentTree = useCallback((comments: Comment[]): Comment[] => {
+  // 确保评论树结构正确
+  const ensureCommentTree = useCallback((comments: Comment[]): Comment[] => {
+    if (!comments || comments.length === 0) {
+      return [];
+    }
+    
+    console.log('CommentList ensureCommentTree: 输入数据', {
+      commentsLength: comments.length,
+      comments: comments.map(c => ({
+        id: c.id,
+        parent_id: c.parent_id,
+        hasReplies: Array.isArray(c.replies),
+        repliesCount: c.replies?.length || 0,
+        repliesIds: c.replies?.map(r => r.id) || []
+      }))
+    });
+    
+    // 检查是否已经是正确的树结构（只有根评论，且都有replies数组）
+    const hasProperTreeStructure = comments.length > 0 && 
+      comments.every(c => c.parent_id === null) && 
+      comments.every(c => Array.isArray(c.replies));
+    
+    console.log('CommentList ensureCommentTree: 树结构检查', {
+      hasProperTreeStructure,
+      allRootComments: comments.every(c => c.parent_id === null),
+      allHaveRepliesArray: comments.every(c => Array.isArray(c.replies))
+    });
+    
+    if (hasProperTreeStructure) {
+      // 已经是正确的树结构，确保所有嵌套的回复也有replies数组
+      const ensureRepliesArray = (comment: Comment): Comment => ({
+        ...comment,
+        replies: comment.replies ? comment.replies.map(ensureRepliesArray) : []
+      });
+      
+      const result = comments.map(ensureRepliesArray);
+      console.log('CommentList: 使用已有的树结构，结果:', result);
+      return result;
+    }
+    
+    // 否则构建树结构（用于扁平化数据）
     const commentMap = new Map<number, Comment>();
     const rootComments: Comment[] = [];
     
@@ -81,7 +114,7 @@ const CommentList: React.FC<CommentListProps> = ({
         case 'oldest':
           return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
         case 'likes':
-          return (b.likes_count || 0) - (a.likes_count || 0);
+          return (b.likes || 0) - (a.likes || 0);
         default:
           return 0;
       }
@@ -140,7 +173,7 @@ const CommentList: React.FC<CommentListProps> = ({
     const countRecursive = (commentList: Comment[]) => {
       commentList.forEach(comment => {
         totalCount++;
-        totalLikes += comment.likes_count || 0;
+        totalLikes += comment.likes || 0;
         if (comment.replies) {
           countRecursive(comment.replies);
         }
@@ -157,17 +190,24 @@ const CommentList: React.FC<CommentListProps> = ({
     const hasReplies = comment.replies && comment.replies.length > 0;
     const canNest = depth < maxDepth;
     
+    // 调试日志
+    console.log(`渲染评论 ${comment.id}:`, {
+      depth,
+      hasReplies,
+      repliesCount: comment.replies?.length || 0,
+      isCollapsed,
+      canNest,
+      maxDepth,
+      shouldRenderReplies: hasReplies && !isCollapsed && canNest
+    });
+    
     return (
       <div key={comment.id} className="comment-thread">
         {/* 评论项 */}
         <CommentItem
           comment={comment}
           depth={depth}
-          maxDepth={maxDepth}
           isCollapsed={isCollapsed}
-          onReply={onReply}
-          onLike={onLike}
-          onDelete={onDelete}
           onToggleCollapse={() => toggleThreadCollapse(comment.id)}
           onToggleExpansion={() => toggleCommentExpansion(comment.id)}
           isExpanded={expandedComments.has(comment.id)}
@@ -175,31 +215,44 @@ const CommentList: React.FC<CommentListProps> = ({
         
         {/* 回复列表 */}
         {hasReplies && !isCollapsed && canNest && (
-          <div className="ml-4 md:ml-8 border-l-2 border-gray-100 pl-4 space-y-3">
-            {comment.replies!.map(reply => renderComment(reply, depth + 1))}
+          <div className="mt-3 space-y-3 relative">
+            {/* 回复连接线 */}
+            <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200" />
+            <div className="space-y-3">
+              {comment.replies!.map(reply => renderComment(reply, depth + 1))}
+            </div>
           </div>
         )}
         
         {/* 深度超限提示 */}
         {hasReplies && !isCollapsed && !canNest && (
-          <div className="ml-4 md:ml-8 mt-2">
+          <div className="mt-3 ml-4">
             <button
               onClick={() => toggleCommentExpansion(comment.id)}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 px-3 py-1.5 rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors"
             >
+              <MessageCircle className="w-3 h-3" />
               查看 {comment.replies!.length} 条回复
             </button>
           </div>
         )}
       </div>
     );
-  }, [collapsedThreads, maxDepth, onReply, onLike, onDelete, toggleThreadCollapse, toggleCommentExpansion, expandedComments]);
+  }, [collapsedThreads, maxDepth, toggleThreadCollapse, toggleCommentExpansion, expandedComments]);
   
   // 处理的评论数据
   const processedComments = React.useMemo(() => {
-    const tree = buildCommentTree(comments);
-    return sortComments(tree, sortBy);
-  }, [comments, buildCommentTree, sortComments, sortBy]);
+    const tree = ensureCommentTree(comments);
+    const sorted = sortComments(tree, sortBy);
+    
+    console.log('CommentList 处理评论数据:', {
+      originalComments: comments,
+      treeComments: tree,
+      sortedComments: sorted
+    });
+    
+    return sorted;
+  }, [comments, ensureCommentTree, sortComments, sortBy]);
   
   // 计算统计信息
   const stats = React.useMemo(() => {

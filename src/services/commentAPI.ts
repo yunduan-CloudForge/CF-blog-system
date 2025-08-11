@@ -82,6 +82,20 @@ export const commentAPI = {
     const response = await fetch(`${API_BASE_URL}/comments?${params}`);
     const data = await response.json();
     
+    // 前端调试日志：检查API响应
+    console.log('=== 前端API调试日志 ===');
+    console.log('API响应成功:', data.success);
+    console.log('评论数量:', data.data?.comments?.length || 0);
+    if (data.data?.comments) {
+      data.data.comments.forEach(comment => {
+        console.log(`评论 ${comment.id} 的回复数量:`, comment.replies?.length || 0);
+        if (comment.replies && comment.replies.length > 0) {
+          console.log(`  回复IDs:`, comment.replies.map(r => r.id));
+        }
+      });
+    }
+    console.log('========================');
+    
     if (!data.success) {
       throw new Error(data.message || '获取评论失败');
     }
@@ -146,6 +160,36 @@ export const commentAPI = {
     
     if (!data.success) {
       throw new Error(data.message || '删除评论失败');
+    }
+  },
+  
+  // 编辑评论
+  editComment: async (commentId: number, content: string): Promise<Comment> => {
+    const response = await createAuthenticatedRequest(`${API_BASE_URL}/comments/${commentId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ content }),
+    });
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.message || '编辑评论失败');
+    }
+    
+    return data.data.comment;
+  },
+  
+  // 举报评论
+  reportComment: async (commentId: number, reason: string, description?: string): Promise<void> => {
+    const response = await createAuthenticatedRequest(`${API_BASE_URL}/comments/${commentId}/report`, {
+      method: 'POST',
+      body: JSON.stringify({ reason, description }),
+    });
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.message || '举报评论失败');
     }
   },
   
@@ -214,16 +258,38 @@ export const commentUtils = {
     } else if (diffInSeconds < 86400) {
       const hours = Math.floor(diffInSeconds / 3600);
       return `${hours}小时前`;
-    } else if (diffInSeconds < 2592000) {
+    } else if (diffInSeconds < 604800) { // 7天内
       const days = Math.floor(diffInSeconds / 86400);
       return `${days}天前`;
+    } else if (diffInSeconds < 2592000) { // 30天内
+      const weeks = Math.floor(diffInSeconds / 604800);
+      return `${weeks}周前`;
     } else {
       return commentTime.toLocaleDateString('zh-CN', {
         year: 'numeric',
         month: 'short',
-        day: 'numeric'
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
       });
     }
+  },
+  
+  // 获取详细时间信息
+  getDetailedTimeInfo: (timestamp: string): { relative: string; absolute: string; tooltip: string } => {
+    const commentTime = new Date(timestamp);
+    const relative = commentUtils.formatCommentTime(timestamp);
+    const absolute = commentTime.toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    const tooltip = `发表于 ${absolute}`;
+    
+    return { relative, absolute, tooltip };
   },
   
   // 验证评论内容

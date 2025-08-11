@@ -8,6 +8,7 @@ interface CommentFormProps {
   articleId: number;
   parentId?: number;
   placeholder?: string;
+  initialContent?: string;
   onSubmit: (content: string) => Promise<boolean>;
   onCancel?: () => void;
   loading?: boolean;
@@ -21,6 +22,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
   articleId,
   parentId,
   placeholder = '写下你的评论...',
+  initialContent = '',
   onSubmit,
   onCancel,
   loading = false,
@@ -37,6 +39,14 @@ const CommentForm: React.FC<CommentFormProps> = ({
   
   // 引用
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // 设置初始内容
+  useEffect(() => {
+    if (initialContent) {
+      setContent(initialContent);
+      setIsFocused(true);
+    }
+  }, [initialContent]);
   
   // 自动聚焦
   useEffect(() => {

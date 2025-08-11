@@ -98,12 +98,12 @@ const ArticleEditor: React.FC = () => {
   useEffect(() => {
     if (isEditing && currentArticle) {
       setFormData({
-        title: currentArticle.title,
-        content: currentArticle.content,
-        summary: currentArticle.summary,
-        status: currentArticle.status,
+        title: currentArticle.title || '',
+        content: currentArticle.content || '',
+        summary: currentArticle.summary || '',
+        status: currentArticle.status || 'draft',
         category_id: currentArticle.category_id?.toString() || '',
-        tag_ids: currentArticle.tags?.map(tag => tag.id) || []
+        tag_ids: Array.isArray(currentArticle.tags) ? currentArticle.tags.map(tag => tag.id) : []
       });
     }
   }, [currentArticle, isEditing]);
@@ -153,10 +153,16 @@ const ArticleEditor: React.FC = () => {
       }
       
       if (success) {
+        // 显示成功消息
+        alert(isEditing ? '文章更新成功！' : '文章创建成功！');
         navigate('/articles');
+      } else {
+        // 显示失败消息
+        alert(isEditing ? '文章更新失败，请重试' : '文章创建失败，请重试');
       }
     } catch (error) {
       console.error('保存文章失败:', error);
+      alert('保存文章时发生错误，请检查网络连接后重试');
     } finally {
       setSaving(false);
     }
@@ -571,7 +577,7 @@ const ArticleEditor: React.FC = () => {
                   <p className="mt-1 text-sm text-red-600">{validationErrors.summary}</p>
                 )}
                 <div className="mt-1 text-sm text-gray-500">
-                  {formData.summary.length}/200 字符
+                  {(formData.summary || '').length}/200 字符
                 </div>
               </div>
             </div>
@@ -642,7 +648,7 @@ const ArticleEditor: React.FC = () => {
                     <label key={tag.id} className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={formData.tag_ids.includes(tag.id)}
+                        checked={(formData.tag_ids || []).includes(tag.id)}
                         onChange={() => handleTagToggle(tag.id)}
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
@@ -659,7 +665,7 @@ const ArticleEditor: React.FC = () => {
                 {!Array.isArray(tags) && (
                   <p className="text-sm text-gray-500 mt-2">标签加载中...</p>
                 )}
-                {Array.isArray(tags) && formData.tag_ids.length === 0 && (
+                {Array.isArray(tags) && (formData.tag_ids || []).length === 0 && (
                   <p className="text-sm text-gray-500 mt-2">未选择标签</p>
                 )}
               </div>

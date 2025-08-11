@@ -8,6 +8,9 @@ import bcrypt from 'bcryptjs';
 const DB_PATH = path.join(process.cwd(), 'blog.db');
 const INIT_SQL_PATH = path.join(process.cwd(), 'api', 'database', 'init.sql');
 const MIGRATION_SQL_PATH = path.join(process.cwd(), 'api', 'database', 'comment_migration.sql');
+const SYSTEM_SETTINGS_MIGRATION_PATH = path.join(process.cwd(), 'api', 'database', 'system_settings_migration.sql');
+const LIKES_MIGRATION_PATH = path.join(process.cwd(), 'api', 'database', 'likes_migration.sql');
+const ADMIN_MIGRATION_PATH = path.join(process.cwd(), 'api', 'database', 'admin_migration.sql');
 
 let db: Database | null = null;
 
@@ -52,6 +55,12 @@ export async function initializeDatabase(): Promise<void> {
       console.log('数据库已经初始化');
       // 检查并执行评论系统迁移
       await runCommentMigration(database);
+      // 检查并执行系统设置迁移
+      await runSystemSettingsMigration(database);
+      // 检查并执行点赞系统迁移
+      await runLikesMigration(database);
+      // 检查并执行管理员权限系统迁移
+      await runAdminMigration(database);
       return;
     }
 
@@ -69,6 +78,15 @@ export async function initializeDatabase(): Promise<void> {
     // 执行评论系统迁移
     await runCommentMigration(database);
     
+    // 执行系统设置迁移
+    await runSystemSettingsMigration(database);
+    
+    // 执行点赞系统迁移
+    await runLikesMigration(database);
+    
+    // 执行管理员权限系统迁移
+    await runAdminMigration(database);
+    
     console.log('数据库初始化完成');
   } catch (error) {
     console.error('数据库初始化失败:', error);
@@ -81,12 +99,12 @@ export async function initializeDatabase(): Promise<void> {
  */
 async function runCommentMigration(database: Database): Promise<void> {
   try {
-    // 检查comment_likes表是否已存在
-    const commentLikesTable = await database.all(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name='comment_likes'"
+    // 检查comment_reports表是否已存在（最新的迁移表）
+    const commentReportsTable = await database.all(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='comment_reports'"
     );
     
-    if (commentLikesTable.length > 0) {
+    if (commentReportsTable.length > 0) {
       console.log('评论系统迁移已完成');
       return;
     }
@@ -102,6 +120,89 @@ async function runCommentMigration(database: Database): Promise<void> {
     console.log('评论系统迁移完成');
   } catch (error) {
     console.error('评论系统迁移失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 执行系统设置迁移
+ */
+async function runSystemSettingsMigration(database: Database): Promise<void> {
+  try {
+    // 检查system_settings表是否已存在
+    const systemSettingsTable = await database.all(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='system_settings'"
+    );
+    
+    if (systemSettingsTable.length > 0) {
+      console.log('系统设置迁移已完成');
+      return;
+    }
+
+    console.log('开始执行系统设置迁移...');
+    
+    // 读取迁移SQL脚本
+    const migrationSQL = fs.readFileSync(SYSTEM_SETTINGS_MIGRATION_PATH, 'utf8');
+    
+    // 执行迁移脚本
+    await database.exec(migrationSQL);
+    
+    console.log('系统设置迁移完成');
+  } catch (error) {
+    console.error('系统设置迁移失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 执行点赞系统迁移
+ */
+async function runLikesMigration(database: Database): Promise<void> {
+  try {
+    // 检查article_likes表是否已存在
+    const articleLikesTable = await database.all(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='article_likes'"
+    );
+    
+    if (articleLikesTable.length > 0) {
+      console.log('点赞系统迁移已完成');
+      return;
+    }
+
+    console.log('开始执行点赞系统迁移...');
+    
+    // 读取并执行点赞系统迁移脚本
+    const migrationSQL = fs.readFileSync(LIKES_MIGRATION_PATH, 'utf8');
+    await database.exec(migrationSQL);
+    
+    console.log('点赞系统迁移已完成');
+  } catch (error) {
+    console.error('点赞系统迁移失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 执行管理员权限系统迁移
+ */
+async function runAdminMigration(database: Database): Promise<void> {
+  try {
+    // 检查是否已经存在权限表
+    const tables = await database.all(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='permissions'"
+    );
+    
+    if (tables.length > 0) {
+      console.log('管理员权限系统迁移已执行');
+      return;
+    }
+    
+    console.log('执行管理员权限系统迁移...');
+    const migrationSQL = fs.readFileSync(ADMIN_MIGRATION_PATH, 'utf8');
+    await database.exec(migrationSQL);
+    console.log('管理员权限系统迁移完成');
+  } catch (error) {
+    console.error('管理员权限系统迁移失败:', error);
     throw error;
   }
 }

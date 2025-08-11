@@ -36,7 +36,7 @@ const CommentActions: React.FC<CommentActionsProps> = ({
   const { user, isAuthenticated } = useAuthStore();
   const [isLiking, setIsLiking] = useState(false);
   const [localLiked, setLocalLiked] = useState(comment.is_liked || false);
-  const [localLikesCount, setLocalLikesCount] = useState(comment.likes_count || 0);
+  const [localLikesCount, setLocalLikesCount] = useState(comment.likes || 0);
   const [showMenu, setShowMenu] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   
@@ -175,9 +175,9 @@ const CommentActions: React.FC<CommentActionsProps> = ({
   
   // 判断权限
   const isAuthor = user?.id === comment.user_id;
-  const canEdit = isAuthor && !comment.is_deleted;
-  const canDelete = (isAuthor || user?.role === 'admin') && !comment.is_deleted;
-  const canReport = !isAuthor && !comment.is_deleted;
+  const canEdit = isAuthor && !comment.deleted;
+  const canDelete = (isAuthor || user?.role === 'admin') && !comment.deleted;
+  const canReport = !isAuthor && !comment.deleted;
   
   // 尺寸样式
   const sizeClasses = {

@@ -12,6 +12,9 @@ import categoriesRoutes from './routes/categories';
 import tagsRoutes from './routes/tags';
 import uploadRoutes from './routes/upload';
 import commentsRoutes from './routes/comments';
+import adminRoutes from './routes/admin';
+import usersRoutes from './routes/users';
+import profileRoutes from './routes/profile';
 import { initializeDatabase } from './database/connection';
 
 // 加载环境变量
@@ -38,6 +41,9 @@ app.use('/api/categories', categoriesRoutes);
 app.use('/api/tags', tagsRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/comments', commentsRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/profile', profileRoutes);
 
 /**
  * health
