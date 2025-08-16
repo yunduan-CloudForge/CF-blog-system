@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Shield, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 
 const AdminLogin: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -65,35 +65,31 @@ const AdminLogin: React.FC = () => {
       if (success && user) {
         // 检查用户是否有管理员权限
         if (user.role === 'admin' || user.role === 'author') {
-          toast.success('管理员登录成功！', {
-            description: `欢迎回来，${user.username}`,
-            icon: <CheckCircle className="w-4 h-4" />
-          });
+          toast.success(`管理员登录成功！欢迎回来，${user.username}`, {
+          icon: '✅'
+        });
           
           // 跳转到管理后台
           navigate('/admin/dashboard');
         } else {
           // 普通用户无法访问管理后台
-          toast.error('权限不足', {
-            description: '您没有管理员权限，无法访问管理后台',
-            icon: <AlertCircle className="w-4 h-4" />
-          });
+          toast.error('权限不足：您没有管理员权限，无法访问管理后台', {
+          icon: '❌'
+        });
           
           // 登出用户
           useAuthStore.getState().logout();
         }
       } else {
-        toast.error('登录失败', {
-          description: '邮箱或密码错误',
-          icon: <AlertCircle className="w-4 h-4" />
-        });
+        toast.error('登录失败：邮箱或密码错误', {
+        icon: '❌'
+      });
       }
     } catch (error) {
       console.error('管理员登录错误:', error);
-      toast.error('登录失败', {
-        description: '网络错误，请稍后重试',
-        icon: <AlertCircle className="w-4 h-4" />
-      });
+      toast.error('登录失败：网络错误，请稍后重试', {
+      icon: '❌'
+    });
     } finally {
       setIsLoading(false);
     }

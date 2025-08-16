@@ -20,7 +20,7 @@ import {
   Check,
   X
 } from 'lucide-react';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 import AdminNavigation from '@/components/AdminNavigation';
 import { authAPI } from '@/store/authStore';
 
@@ -98,23 +98,21 @@ export default function AdminSettings() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
+  const [testEmailAddress, setTestEmailAddress] = useState('');
   const [backupStatus, setBackupStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
 
   // 获取系统设置
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/settings', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await authAPI.authenticatedFetch('/admin/settings');
 
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setSettings({ ...settings, ...data.data });
+          setSettings(prev => ({ ...prev, ...data.data }));
         } else {
           toast.error(data.message || '获取系统设置失败');
         }
@@ -132,61 +130,106 @@ export default function AdminSettings() {
   // 保存设置
   const handleSaveSettings = async () => {
     try {
+      console.log('开始保存设置...');
+      console.log('当前设置数据:', settings);
       setSaving(true);
+      
       const response = await authAPI.authenticatedFetch('/admin/settings', {
         method: 'PUT',
         body: JSON.stringify(settings)
       });
 
+      console.log('保存设置响应状态:', response.status);
+      console.log('保存设置响应头:', response.headers);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('保存设置响应数据:', data);
         if (data.success) {
-          toast.success(data.message || '设置保存成功');
+          toast.success(data.message || '设置保存成功！', {
+            duration: 3000,
+            style: {
+              background: '#10b981',
+              color: '#fff',
+              fontWeight: '500'
+            }
+          });
+          setSaveSuccess(true);
+          // 3秒后重置成功状态
+          setTimeout(() => setSaveSuccess(false), 3000);
         } else {
-          toast.error(data.message || '保存设置失败');
+          console.error('保存设置失败 - 服务器返回错误:', data);
+          toast.error(data.message || '保存设置失败', {
+            duration: 4000
+          });
         }
       } else {
-        toast.error('保存设置失败');
+        const errorText = await response.text();
+        console.error('保存设置HTTP错误:', response.status, errorText);
+        toast.error('保存设置失败，请稍后重试', {
+          duration: 4000
+        });
       }
     } catch (error) {
-      console.error('保存设置失败:', error);
-      toast.error('保存设置失败');
+      console.error('保存设置异常:', error);
+      toast.error('网络错误，请检查连接后重试', {
+        duration: 4000
+      });
     } finally {
       setSaving(false);
+      console.log('保存设置操作完成');
     }
   };
 
   // 测试邮件配置
   const handleTestEmail = async () => {
+    if (!testEmailAddress) {
+      toast.error('请输入测试邮箱地址');
+      return;
+    }
+    
     try {
+      console.log('开始测试邮件配置...');
+      const emailConfig = {
+        smtp_host: settings.smtp_host,
+        smtp_port: settings.smtp_port,
+        smtp_username: settings.smtp_username,
+        smtp_password: settings.smtp_password,
+        smtp_encryption: settings.smtp_encryption,
+        mail_from_address: settings.mail_from_address,
+        mail_from_name: settings.mail_from_name,
+        test_email: testEmailAddress
+      };
+      console.log('邮件配置数据:', { ...emailConfig, smtp_password: '***' });
       setTestingEmail(true);
-      const response = await fetch('/api/admin/settings/test-email', {
+      
+      const response = await authAPI.authenticatedFetch('/admin/settings/test-email', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          smtp_host: settings.smtp_host,
-          smtp_port: settings.smtp_port,
-          smtp_username: settings.smtp_username,
-          smtp_password: settings.smtp_password,
-          smtp_encryption: settings.smtp_encryption,
-          mail_from_address: settings.mail_from_address,
-          mail_from_name: settings.mail_from_name
-        })
+        body: JSON.stringify(emailConfig)
       });
 
+      console.log('测试邮件响应状态:', response.status);
+
       if (response.ok) {
-        toast.success('测试邮件发送成功');
+        const data = await response.json();
+        console.log('测试邮件响应数据:', data);
+        if (data.success) {
+          toast.success(data.message || '测试邮件发送成功');
+        } else {
+          console.error('测试邮件失败 - 服务器返回错误:', data);
+          toast.error(data.message || '测试邮件发送失败');
+        }
       } else {
+        const errorText = await response.text();
+        console.error('测试邮件HTTP错误:', response.status, errorText);
         toast.error('测试邮件发送失败');
       }
     } catch (error) {
-      console.error('测试邮件失败:', error);
+      console.error('测试邮件异常:', error);
       toast.error('测试邮件失败');
     } finally {
       setTestingEmail(false);
+      console.log('测试邮件操作完成');
     }
   };
 
@@ -194,11 +237,8 @@ export default function AdminSettings() {
   const handleCreateBackup = async () => {
     try {
       setBackupStatus('running');
-      const response = await fetch('/api/admin/backup', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+      const response = await authAPI.authenticatedFetch('/admin/backup', {
+        method: 'POST'
       });
 
       if (response.ok) {
@@ -228,11 +268,8 @@ export default function AdminSettings() {
   // 清理缓存
   const handleClearCache = async () => {
     try {
-      const response = await fetch('/api/admin/cache/clear', {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+      const response = await authAPI.authenticatedFetch('/admin/cache/clear', {
+        method: 'DELETE'
       });
 
       if (response.ok) {
@@ -248,6 +285,20 @@ export default function AdminSettings() {
 
   useEffect(() => {
     fetchSettings();
+    
+    // 添加键盘快捷键支持
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        handleSaveSettings();
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   const updateSetting = (key: keyof SystemSettings, value: any) => {
@@ -285,14 +336,22 @@ export default function AdminSettings() {
             <button
               onClick={handleSaveSettings}
               disabled={saving}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+              className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center gap-2 font-medium transform ${
+                saveSuccess
+                  ? 'bg-green-600 text-white scale-105 shadow-lg'
+                  : saving
+                  ? 'bg-blue-400 text-white cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
+              }`}
             >
-              {saving ? (
+              {saveSuccess ? (
+                <Check className="w-4 h-4" />
+              ) : saving ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
               ) : (
                 <Save className="w-4 h-4" />
               )}
-              {saving ? '保存中...' : '保存设置'}
+              {saveSuccess ? '保存成功！' : saving ? '保存中...' : '保存设置'}
             </button>
           </div>
         </header>
@@ -393,18 +452,31 @@ export default function AdminSettings() {
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium text-gray-900">SMTP 邮件配置</h3>
-                    <button
-                      onClick={handleTestEmail}
-                      disabled={testingEmail}
-                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50"
-                    >
-                      {testingEmail ? (
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Mail className="w-4 h-4" />
-                      )}
-                      {testingEmail ? '测试中...' : '测试邮件'}
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="email"
+                        value={testEmailAddress}
+                        onChange={(e) => setTestEmailAddress(e.target.value)}
+                        placeholder="输入测试邮箱地址"
+                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+                      />
+                      <button
+                        onClick={handleTestEmail}
+                        disabled={testingEmail || !testEmailAddress}
+                        className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 font-medium ${
+                          testingEmail || !testEmailAddress
+                            ? 'bg-green-400 text-white cursor-not-allowed'
+                            : 'bg-green-600 text-white hover:bg-green-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2'
+                        }`}
+                      >
+                        {testingEmail ? (
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Mail className="w-4 h-4" />
+                        )}
+                        {testingEmail ? '测试中...' : '测试邮件'}
+                      </button>
+                    </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -677,7 +749,7 @@ export default function AdminSettings() {
                     <div className="md:col-span-2">
                       <button
                         onClick={handleClearCache}
-                        className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors flex items-center gap-2"
+                        className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 transition-all duration-200 flex items-center gap-2 font-medium"
                       >
                         <RefreshCw className="w-4 h-4" />
                         清理缓存

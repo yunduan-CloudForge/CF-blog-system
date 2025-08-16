@@ -41,7 +41,12 @@ const AdminDashboard: React.FC = () => {
     isConnected,
     realtimeStats,
     userActivities,
-    lastUpdate
+    lastUpdate,
+    connect,
+    disconnect,
+    refreshStats,
+    formatUptime,
+    formatLastUpdate
   } = useRealtime();
   const [isLoading, setIsLoading] = useState(true);
 
@@ -64,8 +69,13 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  // 使用实时数据或静态数据
-  const displayStats = realtimeStats?.overview || stats;
+  // 计算显示的统计数据
+  const displayStats = realtimeStats?.overview || {
+    totalUsers: 0,
+    totalArticles: 0,
+    totalComments: 0,
+    totalViews: 0
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('zh-CN', {
@@ -142,7 +152,7 @@ const AdminDashboard: React.FC = () => {
                 <p className="text-sm font-medium text-gray-600">总用户数</p>
                 <p className="text-3xl font-bold text-gray-900">{displayStats?.totalUsers || 0}</p>
                 <p className="text-sm text-green-600 mt-1">
-                  +{displayStats?.recentUsers || 0} 本周新增
+                  +0 本周新增
                 </p>
               </div>
               <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
@@ -157,7 +167,7 @@ const AdminDashboard: React.FC = () => {
                 <p className="text-sm font-medium text-gray-600">文章总数</p>
                 <p className="text-3xl font-bold text-gray-900">{displayStats?.totalArticles || 0}</p>
                 <p className="text-sm text-blue-600 mt-1">
-                  +{displayStats?.recentArticles || 0} 本月新增
+                  +0 本月新增
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
@@ -172,7 +182,7 @@ const AdminDashboard: React.FC = () => {
                 <p className="text-sm font-medium text-gray-600">评论总数</p>
                 <p className="text-3xl font-bold text-gray-900">{displayStats?.totalComments || 0}</p>
                 <p className="text-sm text-green-600 mt-1">
-                  +{displayStats?.recentComments || 0} 本月新增
+                  +0 本月新增
                 </p>
               </div>
               <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
@@ -204,11 +214,11 @@ const AdminDashboard: React.FC = () => {
                   <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                     <Clock className="w-5 h-5" />
                     最近操作日志
-                    {lastUpdated && (
-                       <span className="text-xs text-gray-500 ml-auto">
-                         最后更新: {formatDate(lastUpdated)}
-                       </span>
-                     )}
+                    {lastUpdate && (
+                      <p className="text-xs text-gray-500 mt-1">
+                         最后更新: {formatLastUpdate(lastUpdate)}
+                      </p>
+                    )}
                   </h2>
                   <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
                     查看全部
@@ -233,7 +243,7 @@ const AdminDashboard: React.FC = () => {
                 ) : (
                   <>
                     {/* 显示实时用户活动 */}
-                     {userActivity.slice(0, 3).map((activity, index) => (
+                     {userActivities.slice(0, 3).map((activity, index) => (
                       <div key={`activity-${index}`} className="p-4 hover:bg-gray-50 transition-colors border-l-4 border-blue-500">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -242,7 +252,7 @@ const AdminDashboard: React.FC = () => {
                               {activity.action}
                             </span>
                             <span className="text-sm text-gray-600">
-                              {activity.username} 进行了实时操作
+                              用户 {activity.userId} 进行了实时操作
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -250,7 +260,7 @@ const AdminDashboard: React.FC = () => {
                               实时
                             </span>
                             <span className="text-xs text-gray-500">
-                              {formatDate(activity.timestamp)}
+                              {formatLastUpdate(activity.timestamp)}
                             </span>
                           </div>
                         </div>
@@ -258,7 +268,7 @@ const AdminDashboard: React.FC = () => {
                     ))}
                     
                     {/* 显示历史日志 */}
-                     {recentLogs.slice(0, Math.max(0, 5 - userActivity.length)).map((log) => (
+                     {recentLogs.slice(0, Math.max(0, 5 - userActivities.length)).map((log) => (
                       <div key={log.id} className="p-4 hover:bg-gray-50 transition-colors">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -291,7 +301,7 @@ const AdminDashboard: React.FC = () => {
                       </div>
                     ))}
                     
-                    {userActivity.length === 0 && recentLogs.length === 0 && (
+                    {userActivities.length === 0 && recentLogs.length === 0 && (
                       <div className="p-8 text-center text-gray-500">
                         <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
                         <p>暂无操作日志</p>

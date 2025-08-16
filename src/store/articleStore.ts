@@ -18,6 +18,7 @@ export interface Article {
   likes: number;
   created_at: string;
   updated_at: string;
+  isLiked?: boolean;
   author?: {
     id: number;
     username: string;
@@ -26,6 +27,7 @@ export interface Article {
   category?: {
     id: number;
     name: string;
+    description?: string;
   };
   tags?: Tag[];
 }
@@ -94,6 +96,7 @@ interface ArticleState {
   fetchCategories: () => Promise<boolean>;
   fetchTags: () => Promise<boolean>;
   likeArticle: (id: number) => Promise<boolean>;
+  checkArticleLikeStatus: (id: number) => Promise<boolean>;
 }
 
 // API基础URL

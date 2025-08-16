@@ -8,6 +8,7 @@ import sqlite3 from 'sqlite3';
 import path from 'path';
 import fs from 'fs';
 import * as bcrypt from 'bcrypt';
+import nodemailer from 'nodemailer';
 import { authMiddleware } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
 import { logDetailedAction, logSecurityAction, queryLogs, LogStatus, LogLevel } from '../middleware/logger';
@@ -722,7 +723,7 @@ router.post('/settings/test-email',
   authMiddleware, 
   requirePermission('admin.settings.update'),
   logDetailedAction('test_email_settings', 'settings'),
-  (req, res) => {
+  async (req, res) => {
     const { 
       smtp_host, 
       smtp_port, 
@@ -730,41 +731,78 @@ router.post('/settings/test-email',
       smtp_password, 
       smtp_encryption, 
       mail_from_address, 
-      mail_from_name 
+      mail_from_name,
+      test_email 
     } = req.body;
     
     // 验证必需的邮件配置
     if (!smtp_host || !smtp_port || !smtp_username || !smtp_password || !mail_from_address) {
-      return res.status(400).json({ error: '邮件配置信息不完整' });
+      return res.status(400).json({ 
+        success: false,
+        error: '邮件配置信息不完整' 
+      });
     }
     
-    // 这里应该使用实际的邮件发送库（如nodemailer）来测试
-    // 为了演示，我们模拟一个测试过程
     try {
-      // 模拟邮件发送测试
-      const testResult = {
-        success: true,
-        message: '邮件配置测试成功',
-        details: {
-          host: smtp_host,
-          port: smtp_port,
-          secure: smtp_encryption === 'ssl',
-          from: `${mail_from_name} <${mail_from_address}>`
+      // 创建邮件传输器
+      const transporter = nodemailer.createTransport({
+        host: smtp_host,
+        port: parseInt(smtp_port),
+        secure: smtp_encryption === 'ssl', // true for 465, false for other ports
+        auth: {
+          user: smtp_username,
+          pass: smtp_password
+        },
+        tls: {
+          rejectUnauthorized: false // 允许自签名证书
         }
+      });
+      
+      // 验证SMTP连接
+      await transporter.verify();
+      console.log('SMTP连接验证成功');
+      
+      // 发送测试邮件
+      const testEmailAddress = test_email || '18677523963@163.com';
+      const mailOptions = {
+        from: `${mail_from_name || 'Blog System'} <${mail_from_address}>`,
+        to: testEmailAddress,
+        subject: '博客系统邮件配置测试',
+        text: '这是一封测试邮件，用于验证博客系统的邮件配置是否正常工作。',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">博客系统邮件配置测试</h2>
+            <p>您好！</p>
+            <p>这是一封测试邮件，用于验证博客系统的邮件配置是否正常工作。</p>
+            <p><strong>测试时间：</strong> ${new Date().toLocaleString('zh-CN')}</p>
+            <p><strong>SMTP服务器：</strong> ${smtp_host}:${smtp_port}</p>
+            <p><strong>发件人：</strong> ${mail_from_address}</p>
+            <hr style="border: 1px solid #eee; margin: 20px 0;">
+            <p style="color: #666; font-size: 12px;">此邮件由博客系统自动发送，请勿回复。</p>
+          </div>
+        `
       };
       
-      // 在实际应用中，这里应该:
-      // 1. 创建nodemailer传输器
-      // 2. 发送测试邮件
-      // 3. 返回实际的测试结果
+      const info = await transporter.sendMail(mailOptions);
+      console.log('邮件发送成功:', info.messageId);
       
-      setTimeout(() => {
-        res.json({
+      res.json({
+        success: true,
+        message: '测试邮件发送成功',
+        data: {
           success: true,
-          message: '测试邮件发送成功',
-          data: testResult
-        });
-      }, 1000); // 模拟网络延迟
+          message: '邮件配置测试成功',
+          details: {
+            host: smtp_host,
+            port: smtp_port,
+            secure: smtp_encryption === 'ssl',
+            from: `${mail_from_name || 'Blog System'} <${mail_from_address}>`,
+            to: testEmailAddress,
+            messageId: info.messageId,
+            response: info.response
+          }
+        }
+      });
       
     } catch (error) {
       console.error('邮件测试失败:', error);

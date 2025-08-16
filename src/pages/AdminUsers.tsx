@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAdminStore } from '@/store/adminStore';
 import { AdminPage } from '@/components/AdminLayout';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 import {
   Users,
   Plus,

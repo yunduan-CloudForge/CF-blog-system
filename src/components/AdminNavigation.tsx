@@ -8,9 +8,11 @@ import {
   LogOut,
   Shield,
   Activity,
-  Home
+  Home,
+  FolderOpen,
+  Tag
 } from 'lucide-react';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 
 interface AdminNavigationProps {
   className?: string;
@@ -51,6 +53,18 @@ export default function AdminNavigation({ className = '' }: AdminNavigationProps
       href: '/admin/articles',
       icon: FileText,
       roles: ['admin', 'author']
+    },
+    {
+      name: '分类管理',
+      href: '/admin/categories',
+      icon: FolderOpen,
+      roles: ['admin']
+    },
+    {
+      name: '标签管理',
+      href: '/admin/tags',
+      icon: Tag,
+      roles: ['admin']
     },
     {
       name: '权限管理',

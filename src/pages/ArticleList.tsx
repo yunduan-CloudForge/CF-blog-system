@@ -2,7 +2,7 @@
  * 文章列表页面
  * 支持分页、搜索、筛选功能
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   Search, 
@@ -22,6 +22,118 @@ import {
 } from 'lucide-react';
 import { useArticleStore } from '../store/articleStore';
 import { useAuthStore, authAPI } from '../store/authStore';
+
+// 文章卡片组件 - 使用React.memo优化
+const ArticleCard = React.memo<{
+  article: any;
+  canEdit: boolean;
+  onLike: (id: number) => void;
+  onDelete: (id: number) => void;
+  formatDate: (date: string) => string;
+}>(({ article, canEdit, onLike, onDelete, formatDate }) => {
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+      {/* 文章封面 */}
+      {article.cover_image && (
+        <div className="aspect-video w-full overflow-hidden rounded-t-lg">
+          <img
+            src={article.cover_image}
+            alt={article.title}
+            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+          />
+        </div>
+      )}
+      
+      <div className="p-6">
+        {/* 文章标题 */}
+        <h2 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-2">
+          <Link
+            to={`/articles/${article.id}`}
+            className="hover:text-blue-600 transition-colors"
+          >
+            {article.title}
+          </Link>
+        </h2>
+        
+        {/* 文章摘要 */}
+        {article.summary && (
+          <p className="text-gray-600 mb-4 line-clamp-3">
+            {article.summary}
+          </p>
+        )}
+        
+        {/* 文章元信息 */}
+        <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-1">
+              <User className="h-4 w-4" />
+              <span>{article.author?.username || '未知作者'}</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <Calendar className="h-4 w-4" />
+              <span>{formatDate(article.created_at)}</span>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-1">
+              <Eye className="h-4 w-4" />
+              <span>{article.views || 0}</span>
+            </div>
+            <button
+              onClick={() => onLike(article.id)}
+              className="flex items-center space-x-1 text-red-500 hover:text-red-600 transition-colors"
+            >
+              <Heart className={`h-4 w-4 ${article.isLiked ? 'fill-current' : ''}`} />
+              <span>{article.likes || 0}</span>
+            </button>
+          </div>
+        </div>
+        
+        {/* 分类和标签 */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            {article.category && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                {article.category.name}
+              </span>
+            )}
+            {article.tags && article.tags.slice(0, 2).map((tag: any) => (
+              <span
+                key={tag.id}
+                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800"
+              >
+                <Tag className="h-3 w-3 mr-1" />
+                {tag.name}
+              </span>
+            ))}
+          </div>
+          
+          {/* 操作按钮 */}
+          {canEdit && (
+            <div className="flex items-center space-x-2">
+              <Link
+                to={`/articles/${article.id}/edit`}
+                className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+              >
+                <Edit className="h-4 w-4" />
+              </Link>
+              <button
+                onClick={() => onDelete(article.id)}
+                className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+ArticleCard.displayName = 'ArticleCard';
 
 const ArticleList: React.FC = () => {
   const navigate = useNavigate();
@@ -70,14 +182,8 @@ const ArticleList: React.FC = () => {
     loadData();
   }, [searchParams]);
   
-  // 搜索处理
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateSearchParams({ search: searchTerm, page: '1' });
-  };
-  
-  // 更新URL参数
-  const updateSearchParams = (params: Record<string, string>) => {
+  // 使用useCallback优化函数，避免不必要的重新渲染
+  const updateSearchParams = useCallback((params: Record<string, string>) => {
     const newParams = new URLSearchParams(searchParams);
     
     Object.entries(params).forEach(([key, value]) => {
@@ -89,15 +195,21 @@ const ArticleList: React.FC = () => {
     });
     
     setSearchParams(newParams);
-  };
+  }, [searchParams, setSearchParams]);
+  
+  // 搜索处理
+  const handleSearch = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    updateSearchParams({ search: searchTerm, page: '1' });
+  }, [searchTerm, updateSearchParams]);
   
   // 分页处理
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     updateSearchParams({ page: page.toString() });
-  };
+  }, [updateSearchParams]);
   
   // 筛选处理
-  const handleFilterChange = (filterType: string, value: string) => {
+  const handleFilterChange = useCallback((filterType: string, value: string) => {
     updateSearchParams({ [filterType]: value, page: '1' });
     
     switch (filterType) {
@@ -111,46 +223,66 @@ const ArticleList: React.FC = () => {
         setSelectedStatus(value);
         break;
     }
-  };
+  }, [updateSearchParams]);
   
   // 清除筛选
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setSelectedCategory('');
     setSelectedTag('');
     setSelectedStatus('');
     setSearchTerm('');
     setSearchParams({});
-  };
+  }, [setSearchParams]);
   
   // 删除文章
-  const handleDeleteArticle = async (id: number) => {
+  const handleDeleteArticle = useCallback(async (id: number) => {
     if (window.confirm('确定要删除这篇文章吗？')) {
       await deleteArticle(id);
     }
-  };
+  }, [deleteArticle]);
   
   // 点赞文章
-  const handleLikeArticle = async (id: number) => {
+  const handleLikeArticle = useCallback(async (id: number) => {
     if (!isAuthenticated) {
       navigate('/login');
       return;
     }
     await likeArticle(id);
-  };
+  }, [isAuthenticated, navigate, likeArticle]);
   
-  // 格式化日期
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+  // 格式化日期 - 使用useMemo缓存函数
+  const formatDate = useMemo(() => {
+    return (dateString: string) => {
+      return new Date(dateString).toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    };
+  }, []);
+  
+  // 检查是否可以编辑/删除文章 - 使用useMemo优化
+  const canEditArticle = useMemo(() => {
+    return (article: any) => {
+      return isAuthenticated && (user?.role === 'admin' || user?.id === article.author_id);
+    };
+  }, [isAuthenticated, user?.role, user?.id]);
+  
+  // 过滤后的文章列表 - 使用useMemo优化
+  const filteredArticles = useMemo(() => {
+    return articles.filter(article => {
+      if (selectedCategory && article.category?.id !== parseInt(selectedCategory)) {
+        return false;
+      }
+      if (selectedTag && !article.tags?.some((tag: any) => tag.id === parseInt(selectedTag))) {
+        return false;
+      }
+      if (selectedStatus && article.status !== selectedStatus) {
+        return false;
+      }
+      return true;
     });
-  };
-  
-  // 检查是否可以编辑/删除文章
-  const canEditArticle = (article: any) => {
-    return isAuthenticated && (user?.role === 'admin' || user?.id === article.author_id);
-  };
+  }, [articles, selectedCategory, selectedTag, selectedStatus]);
 
   const handleLogout = async () => {
     await authAPI.logout();
@@ -359,10 +491,12 @@ const ArticleList: React.FC = () => {
         {/* 文章列表 */}
         {!isLoading && (
           <div className="space-y-6">
-            {articles.length === 0 ? (
+            {filteredArticles.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-gray-500 text-lg">暂无文章</p>
-                {isAuthenticated && (
+                <p className="text-gray-500 text-lg">
+                  {articles.length === 0 ? '暂无文章' : '没有符合条件的文章'}
+                </p>
+                {isAuthenticated && articles.length === 0 && (
                   <Link
                     to="/articles/new"
                     className="inline-flex items-center mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -373,110 +507,18 @@ const ArticleList: React.FC = () => {
                 )}
               </div>
             ) : (
-              articles.map(article => (
-                <div key={article.id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
-                  <div className="p-6">
-                    {/* 文章头部信息 */}
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <Link
-                          to={`/articles/${article.id}`}
-                          className="text-xl font-semibold text-gray-900 hover:text-blue-600 transition-colors"
-                        >
-                          {article.title}
-                        </Link>
-                        
-                        {/* 文章元信息 */}
-                        <div className="flex items-center mt-2 text-sm text-gray-500 space-x-4">
-                          <div className="flex items-center">
-                            <User className="w-4 h-4 mr-1" />
-                            {article.author?.username || '未知作者'}
-                          </div>
-                          <div className="flex items-center">
-                            <Calendar className="w-4 h-4 mr-1" />
-                            {formatDate(article.created_at)}
-                          </div>
-                          <div className="flex items-center">
-                            <Eye className="w-4 h-4 mr-1" />
-                            {article.views} 次浏览
-                          </div>
-                          <div className="flex items-center">
-                            <Heart className="w-4 h-4 mr-1" />
-                            {article.likes} 个赞
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* 操作按钮 */}
-                      {canEditArticle(article) && (
-                        <div className="flex items-center space-x-2 ml-4">
-                          <Link
-                            to={`/articles/${article.id}/edit`}
-                            className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                            title="编辑"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Link>
-                          <button
-                            onClick={() => handleDeleteArticle(article.id)}
-                            className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                            title="删除"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* 文章摘要 */}
-                    <p className="text-gray-600 mb-4 line-clamp-3">
-                      {article.summary}
-                    </p>
-                    
-                    {/* 分类和标签 */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        {/* 分类 */}
-                        {article.category && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {article.category.name}
-                          </span>
-                        )}
-                        
-                        {/* 标签 */}
-                        {article.tags && article.tags.length > 0 && (
-                          <div className="flex items-center space-x-1">
-                            <Tag className="w-4 h-4 text-gray-400" />
-                            <div className="flex space-x-1">
-                              {article.tags.slice(0, 3).map(tag => (
-                                <span
-                                  key={tag.id}
-                                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                                  style={{ backgroundColor: tag.color + '20', color: tag.color }}
-                                >
-                                  {tag.name}
-                                </span>
-                              ))}
-                              {article.tags.length > 3 && (
-                                <span className="text-xs text-gray-500">+{article.tags.length - 3}</span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* 点赞按钮 */}
-                      <button
-                        onClick={() => handleLikeArticle(article.id)}
-                        className="flex items-center space-x-1 text-gray-500 hover:text-red-500 transition-colors"
-                      >
-                        <Heart className="w-4 h-4" />
-                        <span className="text-sm">{article.likes}</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredArticles.map(article => (
+                  <ArticleCard
+                    key={article.id}
+                    article={article}
+                    canEdit={canEditArticle(article)}
+                    onLike={handleLikeArticle}
+                    onDelete={handleDeleteArticle}
+                    formatDate={formatDate}
+                  />
+                ))}
+              </div>
             )}
           </div>
         )}

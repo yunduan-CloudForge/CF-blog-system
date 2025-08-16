@@ -15,6 +15,10 @@ import AdminPermissions from "@/pages/AdminPermissions";
 import AdminLogs from "@/pages/AdminLogs";
 import AdminSettings from "@/pages/AdminSettings";
 import SystemStatus from "@/pages/SystemStatus";
+import AdminCategories from "@/pages/AdminCategories";
+import AdminTags from "@/pages/AdminTags";
+import CategoryPage from "@/pages/CategoryPage";
+import TagPage from "@/pages/TagPage";
 import UserCenter from "@/pages/UserCenter";
 import MyArticles from "@/pages/MyArticles";
 
@@ -47,6 +51,10 @@ export default function App() {
           <Route path="/articles/new" element={<ProtectedRoute><ArticleEditor /></ProtectedRoute>} />
           <Route path="/articles/:id/edit" element={<ProtectedRoute><ArticleEditor /></ProtectedRoute>} />
           
+          {/* 分类和标签页面 */}
+          <Route path="/categories/:categoryId" element={<CategoryPage />} />
+          <Route path="/tags/:tagId" element={<TagPage />} />
+          
           {/* 用户中心 */}
           <Route path="/user/center" element={<ProtectedRoute><UserCenter /></ProtectedRoute>} />
           <Route path="/my-articles" element={<ProtectedRoute><MyArticles /></ProtectedRoute>} />
@@ -57,6 +65,8 @@ export default function App() {
           <Route path="/admin/dashboard/basic" element={<AuthorRoute><AdminDashboard /></AuthorRoute>} />
           <Route path="/admin/users" element={<AdminOnlyRoute><AdminUsers /></AdminOnlyRoute>} />
           <Route path="/admin/articles" element={<AuthorRoute><AdminArticles /></AuthorRoute>} />
+          <Route path="/admin/categories" element={<AdminOnlyRoute><AdminCategories /></AdminOnlyRoute>} />
+          <Route path="/admin/tags" element={<AdminOnlyRoute><AdminTags /></AdminOnlyRoute>} />
           <Route path="/admin/permissions" element={<AdminOnlyRoute><AdminPermissions /></AdminOnlyRoute>} />
           <Route path="/admin/logs" element={<AdminOnlyRoute><AdminLogs /></AdminOnlyRoute>} />
           <Route path="/admin/settings" element={<AdminOnlyRoute><AdminSettings /></AdminOnlyRoute>} />
