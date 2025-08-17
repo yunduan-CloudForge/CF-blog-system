@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'blog-system-api',
-      script: './api/index.ts',
+      script: './api/server.ts',
       interpreter: 'node',
       interpreter_args: '--loader tsx',
       instances: 'max', // 使用所有CPU核心

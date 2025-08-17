@@ -58,6 +58,7 @@ app.use('/api/health', (req: Request, res: Response): void => {
 /**
  * error handler middleware
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((error: Error, req: Request, res: Response, _: NextFunction) => {
   res.status(500).json({
     success: false,

@@ -219,7 +219,12 @@ router.get('/stats', authMiddleware, requirePermission('admin.stats.read'), (req
 router.get('/dashboard/stats', authMiddleware, requirePermission('admin.stats.read'), (req, res) => {
   const db = new sqlite3.Database(dbPath);
   
-  const dashboardStats: any = {
+  const dashboardStats: {
+    overview: Record<string, unknown>;
+    trends: Record<string, unknown>;
+    charts: Record<string, unknown>;
+    systemStatus: Record<string, unknown>;
+  } = {
     overview: {},
     trends: {},
     charts: {},
@@ -243,7 +248,7 @@ router.get('/dashboard/stats', authMiddleware, requirePermission('admin.stats.re
       (SELECT SUM(likes) FROM articles) as totalLikes
   `;
   
-  db.get(overviewQuery, [], (err, row: any) => {
+  db.get(overviewQuery, [], (err, row: Record<string, unknown>) => {
     if (err) {
       console.error('Overview query error:', err);
       dashboardStats.overview = {};
@@ -460,7 +465,7 @@ router.get('/dashboard/stats', authMiddleware, requirePermission('admin.stats.re
       (SELECT AVG(CAST(views AS REAL)) FROM articles WHERE status = 'published') as avgViews
   `;
   
-  db.get(systemStatusQuery, [], (err, row: any) => {
+  db.get(systemStatusQuery, [], (err, row: Record<string, unknown>) => {
     if (err) {
       console.error('System status query error:', err);
       dashboardStats.systemStatus = {};
@@ -499,8 +504,8 @@ router.get('/settings', authMiddleware, requirePermission('admin.settings.read')
     }
     
     // 将设置转换为键值对格式
-    const settings: any = {};
-    rows.forEach((row: any) => {
+    const settings: Record<string, unknown> = {};
+    rows.forEach((row: { key: string; value: unknown }) => {
       settings[row.key] = row.value;
     });
     
@@ -859,11 +864,11 @@ router.post('/backup',
             });
           }
           
-          tables.forEach((table: any) => {
+          tables.forEach((table: { name: string }) => {
             const tableName = table.name;
             
             // 获取表结构
-            sourceDb.get(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`, [tableName], (err, schema: any) => {
+            sourceDb.get(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`, [tableName], (err, schema: { sql: string }) => {
               if (err) {
                 console.error(`获取表 ${tableName} 结构失败:`, err);
                 return;
@@ -889,7 +894,7 @@ router.post('/backup',
                     const insertSql = `INSERT INTO ${tableName} (${columns.join(',')}) VALUES (${placeholders})`;
                     
                     const stmt = backupDb.prepare(insertSql);
-                    rows.forEach((row: any) => {
+                    rows.forEach((row: Record<string, unknown>) => {
                       const values = columns.map(col => row[col]);
                       stmt.run(values);
                     });

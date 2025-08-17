@@ -23,6 +23,7 @@ interface UserInfo {
 
 // 扩展Request接口
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       user?: UserInfo;
@@ -327,7 +328,7 @@ function checkResourceOwnership(resourceId: string, userId: number, resourceTabl
     
     const query = `SELECT ${ownerField} FROM ${resourceTable} WHERE id = ?`;
 
-    db.get(query, [resourceId], (err, row: any) => {
+    db.get(query, [resourceId], (err, row: Record<string, unknown>) => {
       db.close();
       if (err) {
         reject(err);
@@ -359,7 +360,7 @@ export async function getUserPermissions(userId: number): Promise<string[]> {
       WHERE u.id = ?
     `;
 
-    db.all(query, [userId], (err, rows: any[]) => {
+    db.all(query, [userId], (err, rows: { name: string }[]) => {
       db.close();
       if (err) {
         reject(err);

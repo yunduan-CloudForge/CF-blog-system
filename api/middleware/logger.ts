@@ -179,8 +179,8 @@ export const logAction = (action: string, resource: string, options: {
     res.send = function(data: unknown) {
       const status = res.statusCode >= 200 && res.statusCode < 300 ? LogStatus.SUCCESS : LogStatus.FAILED;
       const errorMessage = status === LogStatus.FAILED ? 
-        (data && typeof data === 'object' && 'error' in data ? (data as any).error : 
-         data && typeof data === 'object' && 'message' in data ? (data as any).message : undefined) : undefined;
+        (data && typeof data === 'object' && 'error' in data ? (data as Record<string, unknown>).error : 
+         data && typeof data === 'object' && 'message' in data ? (data as Record<string, unknown>).message : undefined) : undefined;
       writeLog(status, errorMessage);
       return originalSend.call(this, data);
     };
@@ -189,8 +189,8 @@ export const logAction = (action: string, resource: string, options: {
     res.json = function(data: unknown) {
       const status = res.statusCode >= 200 && res.statusCode < 300 ? LogStatus.SUCCESS : LogStatus.FAILED;
       const errorMessage = status === LogStatus.FAILED ? 
-        (data && typeof data === 'object' && 'error' in data ? (data as any).error : 
-         data && typeof data === 'object' && 'message' in data ? (data as any).message : undefined) : undefined;
+        (data && typeof data === 'object' && 'error' in data ? (data as Record<string, unknown>).error : 
+         data && typeof data === 'object' && 'message' in data ? (data as Record<string, unknown>).message : undefined) : undefined;
       writeLog(status, errorMessage);
       return originalJson.call(this, data);
     };
@@ -293,7 +293,7 @@ function getClientIP(req: Request): string {
     req.ip ||
     req.connection.remoteAddress ||
     req.socket.remoteAddress ||
-    (req.connection as any)?.socket?.remoteAddress ||
+    (req.connection as { socket?: { remoteAddress?: string } })?.socket?.remoteAddress ||
     req.headers['x-forwarded-for'] as string ||
     req.headers['x-real-ip'] as string ||
     'unknown'
@@ -414,7 +414,7 @@ export async function queryLogs(filters: {
     `;
     
     // 获取总数
-    db.get(countQuery, params, (err, countRow: any) => {
+    db.get(countQuery, params, (err, countRow: { count: number }) => {
       if (err) {
         db.close();
         reject(err);
@@ -422,7 +422,7 @@ export async function queryLogs(filters: {
       }
       
       // 获取数据
-      db.all(dataQuery, [...params, pagination.limit, offset], (err, rows: any[]) => {
+      db.all(dataQuery, [...params, pagination.limit, offset], (err, rows: LogEntry[]) => {
         db.close();
         if (err) {
           reject(err);

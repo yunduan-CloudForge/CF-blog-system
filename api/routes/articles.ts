@@ -96,7 +96,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const articles = await query(articlesQuery, [...queryParams, limitNum, offset]);
 
     // 获取每篇文章的标签
-    for (const article of articles as any[]) {
+    for (const article of articles as { id: number }[]) {
       const tags = await query(`
         SELECT t.id, t.name, t.color
         FROM tags t
@@ -193,6 +193,7 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response): Promis
         WHERE a.author_id = ?
       `, [targetAuthorId]);
       totalComments = commentStats?.total || 0;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_error) {
       // 如果评论表不存在，忽略错误
       console.log('评论表可能不存在，跳过评论统计');
@@ -332,7 +333,7 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
  */
 router.post('/', authMiddleware, logDetailedAction('create_article', 'articles'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = (req as { user: { userId: number } }).user.userId;
     const { title, content, summary, status = 'draft', category_id, tag_ids = [] } = req.body;
 
     // 验证必填字段
@@ -418,8 +419,8 @@ router.post('/', authMiddleware, logDetailedAction('create_article', 'articles')
 router.put('/:id', authMiddleware, logDetailedAction('update_article', 'articles'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user.userId;
-    const userRole = (req as any).user.role;
+    const userId = (req as { user: { userId: number; role: string } }).user.userId;
+    const userRole = (req as { user: { userId: number; role: string } }).user.role;
     const { title, content, summary, status, category_id, tag_ids = [] } = req.body;
 
     // 检查文章是否存在
@@ -516,8 +517,8 @@ router.put('/:id', authMiddleware, logDetailedAction('update_article', 'articles
 router.delete('/:id', authMiddleware, logDetailedAction('delete_article', 'articles'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user.userId;
-    const userRole = (req as any).user.role;
+    const userId = (req as { user: { userId: number; role: string } }).user.userId;
+    const userRole = (req as { user: { userId: number; role: string } }).user.role;
 
     // 检查文章是否存在
     const article = await get('SELECT author_id FROM articles WHERE id = ?', [id]);
