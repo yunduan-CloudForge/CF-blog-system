@@ -5,15 +5,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
+// import { useAuthStore } from '../store/authStore'; // 暂时不需要
 import { useProfile } from '../hooks/useProfile';
-import { User, Settings, Lock, Upload, Save, ArrowLeft, FileText, BarChart3 } from 'lucide-react';
+import { User, Lock, Upload, Save, ArrowLeft, FileText } from 'lucide-react';
 import { toast } from 'sonner';
-import { UserProfile } from '../types/profile';
 
 const UserCenter: React.FC = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
+  // const {} = useAuthStore(); // 暂时不需要使用authStore的数据
   const { profile, loading, updateProfile, updatePassword, uploadAndUpdateAvatar } = useProfile();
   const [activeTab, setActiveTab] = useState<'profile' | 'password'>('profile');
   
@@ -97,7 +96,7 @@ const UserCenter: React.FC = () => {
           avatar: avatarUrl
         });
       }
-    } catch (error) {
+    } catch {
       // 错误处理已在Hook中完成
     }
   };
@@ -126,7 +125,7 @@ const UserCenter: React.FC = () => {
         newPassword: '',
         confirmPassword: ''
       });
-    } catch (error) {
+    } catch {
       // 错误处理已在Hook中完成
     }
   };

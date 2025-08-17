@@ -30,7 +30,6 @@ const TagPage: React.FC = () => {
   // 状态管理
   const {
     articles,
-    categories,
     tags,
     pagination,
     isLoading,
@@ -46,7 +45,7 @@ const TagPage: React.FC = () => {
   
   // 本地状态
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
-  const [currentTag, setCurrentTag] = useState<any>(null);
+  const [currentTag, setCurrentTag] = useState<{id: number; name: string; description?: string} | null>(null);
   
   // 页面加载时获取数据
   useEffect(() => {
@@ -58,15 +57,22 @@ const TagPage: React.FC = () => {
     };
     
     loadData();
-  }, []);
+  }, [fetchCategories, fetchTags]);
   
   // 获取当前标签信息
   useEffect(() => {
     if (tags.length > 0 && tagId) {
       const tag = tags.find(t => t.id === parseInt(tagId));
-      setCurrentTag(tag);
+      setCurrentTag(tag || null);
     }
   }, [tags, tagId]);
+
+  // 获取文章数据
+  useEffect(() => {
+    if (tagId) {
+      fetchArticles({ tag: tagId });
+    }
+  }, [tagId, fetchArticles]);
   
   // 获取标签文章
   useEffect(() => {
@@ -78,7 +84,7 @@ const TagPage: React.FC = () => {
         status: 'published' // 只显示已发布的文章
       });
     }
-  }, [tagId, searchParams]);
+  }, [tagId, searchParams, fetchArticles]);
   
   // 搜索处理
   const handleSearch = (e: React.FormEvent) => {
@@ -132,7 +138,7 @@ const TagPage: React.FC = () => {
   };
   
   // 检查是否可以编辑/删除文章
-  const canEditArticle = (article: any) => {
+  const canEditArticle = (article: {author_id: number}) => {
     return isAuthenticated && (user?.role === 'admin' || user?.id === article.author_id);
   };
 

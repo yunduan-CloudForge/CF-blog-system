@@ -18,7 +18,7 @@ interface ErrorReport {
   userId?: string;
   sessionId: string;
   breadcrumbs: Breadcrumb[];
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }
 
 // 性能指标定义
@@ -32,7 +32,7 @@ interface PerformanceMetrics {
   url: string;
   userId?: string;
   sessionId: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }
 
 // 用户行为追踪
@@ -41,7 +41,7 @@ interface Breadcrumb {
   category: 'navigation' | 'user' | 'http' | 'console' | 'dom';
   message: string;
   level: 'info' | 'warning' | 'error';
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 }
 
 // 监控配置
@@ -171,7 +171,7 @@ class MonitoringSystem {
         this.captureError({
           type: 'resource',
           message: `Failed to load resource: ${target.tagName}`,
-          filename: (target as any).src || (target as any).href
+          filename: (target as HTMLImageElement | HTMLLinkElement).src || (target as HTMLLinkElement).href
         });
       }
     }, true);
@@ -196,8 +196,8 @@ class MonitoringSystem {
             context: {
               entryType: entry.entryType,
               startTime: entry.startTime,
-              transferSize: (entry as any).transferSize,
-              encodedBodySize: (entry as any).encodedBodySize
+              transferSize: (entry as PerformanceResourceTiming).transferSize,
+              encodedBodySize: (entry as PerformanceResourceTiming).encodedBodySize
             }
           });
         });
@@ -223,7 +223,7 @@ class MonitoringSystem {
           });
         });
         longTaskObserver.observe({ entryTypes: ['longtask'] });
-      } catch (error) {
+      } catch {
         // longtask可能不被支持
       }
     }
@@ -260,11 +260,12 @@ class MonitoringSystem {
 
     // CLS (Cumulative Layout Shift)
     this.observePerformanceEntry('layout-shift', (entry) => {
-      if (!(entry as any).hadRecentInput) {
+      const layoutShiftEntry = entry as PerformanceEntry & { hadRecentInput?: boolean; value: number };
+      if (!layoutShiftEntry.hadRecentInput) {
         this.capturePerformanceMetric({
           type: 'layout',
           name: 'CLS',
-          value: (entry as any).value,
+          value: layoutShiftEntry.value,
           unit: 'score'
         });
       }
@@ -281,7 +282,7 @@ class MonitoringSystem {
           list.getEntries().forEach(callback);
         });
         observer.observe({ entryTypes: [entryType] });
-      } catch (error) {
+      } catch {
         // 某些entryType可能不被支持
       }
     }
@@ -436,7 +437,7 @@ class MonitoringSystem {
           level: response.ok ? 'info' : 'warning',
           data: {
             url,
-            method: (args[1] as any)?.method || 'GET',
+            method: (args[1] as RequestInit)?.method || 'GET',
             status: response.status,
             duration
           }
@@ -462,7 +463,7 @@ class MonitoringSystem {
           level: 'error',
           data: {
             url,
-            method: (args[1] as any)?.method || 'GET',
+            method: (args[1] as RequestInit)?.method || 'GET',
             error: (error as Error).message,
             duration
           }
@@ -491,7 +492,7 @@ class MonitoringSystem {
   private setupMemoryMonitoring(): void {
     if ('memory' in performance) {
       setInterval(() => {
-        const memory = (performance as any).memory;
+        const memory = (performance as Performance & { memory: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory;
         this.capturePerformanceMetric({
           type: 'custom',
           name: 'memory-usage',
@@ -675,7 +676,7 @@ class MonitoringSystem {
         const parsed = JSON.parse(authData);
         this.userId = parsed.user?.id;
       }
-    } catch (error) {
+    } catch {
       // 忽略解析错误
     }
   }

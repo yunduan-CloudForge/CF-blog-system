@@ -22,7 +22,7 @@ const createAuthenticatedRequest = (url: string, options: RequestInit = {}) => {
 };
 
 // 错误处理工具
-export const handleCommentError = (error: any): string => {
+export const handleCommentError = (error: {response?: {status: number; data?: {message?: string}}; message?: string}): string => {
   if (error.response) {
     // API返回的错误
     switch (error.response.status) {
@@ -52,7 +52,7 @@ export const withRetry = async <T>(
   maxRetries: number = 3,
   delay: number = 1000
 ): Promise<T> => {
-  let lastError: any;
+  let lastError: Error;
   
   for (let i = 0; i <= maxRetries; i++) {
     try {
@@ -216,7 +216,7 @@ export const commentAPI = {
       }
       
       return data.data.liked;
-    } catch (error) {
+    } catch {
       return false;
     }
   },
@@ -236,7 +236,7 @@ export const commentAPI = {
       }
       
       return data.data.likes;
-    } catch (error) {
+    } catch {
       return {};
     }
   }

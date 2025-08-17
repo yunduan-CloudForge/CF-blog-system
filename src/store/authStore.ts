@@ -105,8 +105,8 @@ export const useAuthStore = create<AuthState>()(persist(
           console.error('登录失败:', data.message);
           return false;
         }
-      } catch (error) {
-        console.error('登录请求失败:', error);
+      } catch {
+        console.error('登录请求失败');
         return false;
       } finally {
         set({ isLoading: false });
@@ -135,8 +135,8 @@ export const useAuthStore = create<AuthState>()(persist(
           console.error('注册失败:', data.message);
           return false;
         }
-      } catch (error) {
-        console.error('注册请求失败:', error);
+      } catch {
+        console.error('注册请求失败');
         return false;
       } finally {
         set({ isLoading: false });
@@ -173,8 +173,8 @@ export const useAuthStore = create<AuthState>()(persist(
           get().logout();
           return false;
         }
-      } catch (error) {
-        console.error('获取用户信息失败:', error);
+      } catch {
+        console.error('获取用户信息失败');
         get().logout();
         return false;
       } finally {

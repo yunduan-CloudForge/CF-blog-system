@@ -95,10 +95,11 @@ const createAuthenticatedRequest = (url: string, options: RequestInit = {}) => {
 };
 
 // 错误处理工具
-const handleCommentError = (error: any): string => {
-  // 如果是Response对象（HTTP错误状态码）
-  if (error.status) {
-    switch (error.status) {
+const handleCommentError = (error: unknown): string => {
+  // 如果是ApiError对象（HTTP错误状态码）
+  if (error && typeof error === 'object' && 'status' in error) {
+    const apiError = error as ApiError;
+    switch (apiError.status) {
       case 401:
         return '请先登录后再进行操作';
       case 403:
@@ -122,21 +123,26 @@ const handleCommentError = (error: any): string => {
 };
 
 // 处理API响应的工具函数
+interface ApiError extends Error {
+  status?: number;
+  data?: unknown;
+}
+
 const handleApiResponse = async (response: Response) => {
   const data = await response.json();
   
   if (!response.ok) {
     // 创建一个包含状态码和消息的错误对象
-    const error = new Error(data.message || `HTTP ${response.status}`);
-    (error as any).status = response.status;
-    (error as any).data = data;
+    const error = new Error(data.message || `HTTP ${response.status}`) as ApiError;
+    error.status = response.status;
+    error.data = data;
     throw error;
   }
   
   if (!data.success) {
-    const error = new Error(data.message || '操作失败');
-    (error as any).status = response.status;
-    (error as any).data = data;
+    const error = new Error(data.message || '操作失败') as ApiError;
+    error.status = response.status;
+    error.data = data;
     throw error;
   }
   
@@ -236,7 +242,7 @@ export const useCommentStore = create<CommentState>((set, get) => ({
         },
         loading: false
       }));
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorMessage = handleCommentError(error);
       set({ error: errorMessage, loading: false });
       toast.error(errorMessage);
@@ -271,7 +277,7 @@ export const useCommentStore = create<CommentState>((set, get) => ({
       
       toast.success('评论发表成功');
       return newComment;
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorMessage = handleCommentError(error);
       set({ error: errorMessage, loading: false });
       toast.error(errorMessage);
@@ -315,7 +321,7 @@ export const useCommentStore = create<CommentState>((set, get) => ({
       
       toast.success('回复发表成功');
       return newReply;
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorMessage = handleCommentError(error);
       set({ error: errorMessage, loading: false });
       toast.error(errorMessage);
@@ -338,7 +344,7 @@ export const useCommentStore = create<CommentState>((set, get) => ({
       get().updateComment(articleId, commentId, { is_liked: liked, likes });
       
       toast.success(liked ? '点赞成功' : '取消点赞');
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorMessage = handleCommentError(error);
       toast.error(errorMessage);
     }
@@ -351,7 +357,7 @@ export const useCommentStore = create<CommentState>((set, get) => ({
         method: 'DELETE',
       });
       
-      const data = await handleApiResponse(response);
+      await handleApiResponse(response);
       
       // 从本地状态中移除评论，避免重新获取
       set(state => {
@@ -378,7 +384,7 @@ export const useCommentStore = create<CommentState>((set, get) => ({
       });
       
       toast.success('评论删除成功');
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorMessage = handleCommentError(error);
       toast.error(errorMessage);
     }
@@ -407,7 +413,7 @@ export const useCommentStore = create<CommentState>((set, get) => ({
       set({ loading: false });
       toast.success('评论编辑成功');
       return updatedComment;
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorMessage = handleCommentError(error);
       set({ error: errorMessage, loading: false });
       toast.error(errorMessage);
@@ -482,7 +488,8 @@ export const useCommentStore = create<CommentState>((set, get) => ({
   // 清空指定文章的评论
   clearComments: (articleId: number) => {
     set(state => {
-      const { [articleId]: removed, ...rest } = state.commentsByArticle;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { [articleId]: _, ...rest } = state.commentsByArticle;
       return { commentsByArticle: rest };
     });
   }

@@ -7,7 +7,7 @@ import { useAuthStore } from '../store/authStore';
 
 interface RealtimeData {
   type: 'stats_update' | 'user_activity' | 'system_status' | 'connection_success' | 'pong';
-  data: any;
+  data: Record<string, unknown>;
   timestamp: number;
 }
 
@@ -130,7 +130,7 @@ class WebSocketService {
     }
   }
 
-  public send(data: any) {
+  public send(data: Record<string, unknown>) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(data));
     } else {

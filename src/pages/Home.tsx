@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LogIn, UserPlus, LogOut, User, BookOpen, PenTool, Shield, Search, Calendar, Eye, Heart, Tag, TrendingUp, Users, FileText, ArrowRight } from 'lucide-react';
 import { useAuthStore, authAPI } from '../store/authStore';
-import { useArticleStore } from '../store/articleStore';
+import { useArticleStore, type Article, type Category } from '../store/articleStore';
 
 export default function Home() {
   const { user, isAuthenticated, isLoading, getCurrentUser } = useAuthStore();
   const { articles, categories, fetchArticles, fetchCategories } = useArticleStore();
-  const [featuredArticles, setFeaturedArticles] = useState<any[]>([]);
-  const [popularArticles, setPopularArticles] = useState<any[]>([]);
+  const [featuredArticles, setFeaturedArticles] = useState<Article[]>([]);
+  const [popularArticles, setPopularArticles] = useState<Article[]>([]);
 
   // 页面加载时检查用户登录状态和获取数据
   useEffect(() => {
@@ -266,7 +266,7 @@ export default function Home() {
                     >
                       <span className="text-gray-700">{category.name}</span>
                       <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                         {(category as any).article_count || 0}
+                         {(category as Category & { article_count?: number }).article_count || 0}
                        </span>
                     </Link>
                   ))}

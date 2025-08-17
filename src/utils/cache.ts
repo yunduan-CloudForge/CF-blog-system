@@ -32,7 +32,7 @@ const DEFAULT_CONFIG: Required<CacheConfig> = {
 /**
  * 通用缓存管理器
  */
-class CacheManager<T = any> {
+class CacheManager<T = unknown> {
   private cache = new Map<string, CacheItem<T>>();
   private config: Required<CacheConfig>;
   private cleanupTimer?: NodeJS.Timeout;
@@ -324,7 +324,7 @@ export const localCache = new CacheManager({ storage: 'localStorage', ttl: 24 * 
 export const sessionCache = new CacheManager({ storage: 'sessionStorage', ttl: 60 * 60 * 1000 });
 
 // API缓存装饰器
-export function withCache<T extends (...args: any[]) => Promise<any>>(
+export function withCache<T extends (...args: unknown[]) => Promise<unknown>>(
   fn: T,
   options: {
     keyGenerator?: (...args: Parameters<T>) => string;
@@ -348,15 +348,10 @@ export function withCache<T extends (...args: any[]) => Promise<any>>(
     }
 
     // 执行原函数
-    try {
-      const result = await fn(...args);
-      // 缓存结果
-      cache.set(cacheKey, result, ttl);
-      return result;
-    } catch (error) {
-      // 不缓存错误结果
-      throw error;
-    }
+    const result = await fn(...args);
+    // 缓存结果
+    cache.set(cacheKey, result, ttl);
+    return result;
   }) as T;
 }
 
@@ -403,7 +398,7 @@ export function useCache<T>(key: string, fetcher: () => Promise<T>, options: {
     };
 
     loadData();
-  }, [key, enabled, ttl]);
+  }, [key, enabled, ttl, cache, fetcher]);
 
   const invalidate = () => {
     cache.delete(key);

@@ -8,13 +8,9 @@ import {
   Users, 
   FileText, 
   MessageSquare, 
-  Tags, 
   Activity, 
-  TrendingUp,
   Shield,
-  AlertTriangle,
   Clock,
-  BarChart3,
   Wifi,
   WifiOff
 } from 'lucide-react';
@@ -61,7 +57,7 @@ const AdminDashboard: React.FC = () => {
         fetchStats(),
         fetchLogs(1, 10) // 获取最近10条日志
       ]);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('初始化数据失败:', error);
       toast.error('加载数据失败');
     } finally {
@@ -318,7 +314,7 @@ const AdminDashboard: React.FC = () => {
             <div className="bg-white rounded-lg shadow-sm border">
               <div className="p-6 border-b">
                 <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5" />
+                  <Activity className="w-5 h-5" />
                   快速操作
                 </h2>
               </div>

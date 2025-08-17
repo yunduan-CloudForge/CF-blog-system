@@ -1,19 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FileText,
   Eye,
   Heart,
-  MessageCircle,
   Edit,
   Trash2,
   Plus,
   Search,
-  Filter,
-  MoreHorizontal,
   CheckSquare,
   Square,
-  BarChart3,
   TrendingUp,
   Calendar,
   Tag,
@@ -24,7 +20,6 @@ import {
   useMyArticles,
   useDeleteArticle,
   useBatchArticleOperations,
-  type MyArticle,
   type MyArticlesQuery
 } from '../hooks/useMyArticles';
 import { useAuthStore } from '../store/authStore';
@@ -53,7 +48,7 @@ const MyArticles: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('');
 
   // 使用自定义hooks
-  const { stats, loading: statsLoading, error: statsError } = useArticleStats();
+  const { stats, loading: statsLoading } = useArticleStats();
   const { articles, total, loading: articlesLoading, error: articlesError, refetch } = useMyArticles(query);
   const { deleteArticle, loading: deleteLoading } = useDeleteArticle();
   const { batchUpdateStatus, batchDelete, loading: batchLoading } = useBatchArticleOperations();
@@ -73,7 +68,7 @@ const MyArticles: React.FC = () => {
   const handleSort = (sortBy: string) => {
     setQuery(prev => ({
       ...prev,
-      sortBy: sortBy as any,
+      sortBy: sortBy as 'created_at' | 'updated_at' | 'views' | 'likes',
       sortOrder: prev.sortBy === sortBy && prev.sortOrder === 'desc' ? 'asc' : 'desc'
     }));
   };

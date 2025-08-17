@@ -144,7 +144,7 @@ interface AdminState {
   resetUserPassword: (id: number, newPassword: string) => Promise<boolean>;
   
   // 操作日志
-  fetchLogs: (page?: number, limit?: number, filters?: any) => Promise<void>;
+  fetchLogs: (page?: number, limit?: number, filters?: Record<string, unknown>) => Promise<void>;
   
   // 系统统计
   fetchStats: () => Promise<void>;
@@ -320,7 +320,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   },
 
   // 获取操作日志
-  fetchLogs: async (page = 1, limit = 20, filters = {}) => {
+  fetchLogs: async (page = 1, limit = 20, filters: Record<string, unknown> = {}) => {
     try {
       set({ logsLoading: true });
       
@@ -468,7 +468,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     return userPermissions.includes(permission);
   },
 
-  hasRole: (role: string | string[]): boolean => {
+  hasRole: (): boolean => {
     // 这里需要从authStore获取用户角色
     // 由于store之间的依赖，我们通过导入useAuthStore来获取
     return true; // 临时返回，实际实现需要检查用户角色
@@ -495,14 +495,14 @@ export const adminAPI = {
   },
 
   // 记录操作日志
-  logAction: async (action: string, resource: string, details?: any): Promise<void> => {
+  logAction: async (action: string, resource: string, details?: Record<string, unknown>): Promise<void> => {
     try {
       await authAPI.authenticatedFetch('/admin/log-action', {
         method: 'POST',
         body: JSON.stringify({ action, resource, details }),
       });
-    } catch (error) {
-      console.error('记录操作日志失败:', error);
+    } catch {
+      console.error('记录操作日志失败');
     }
   },
 };

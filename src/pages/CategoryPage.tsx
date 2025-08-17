@@ -20,7 +20,7 @@ import {
   FolderOpen,
   ArrowLeft
 } from 'lucide-react';
-import { useArticleStore } from '../store/articleStore';
+import { useArticleStore, type Article } from '../store/articleStore';
 import { useAuthStore, authAPI } from '../store/authStore';
 
 const CategoryPage: React.FC = () => {
@@ -32,7 +32,6 @@ const CategoryPage: React.FC = () => {
   const {
     articles,
     categories,
-    tags,
     pagination,
     isLoading,
     error,
@@ -47,7 +46,7 @@ const CategoryPage: React.FC = () => {
   
   // 本地状态
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
-  const [currentCategory, setCurrentCategory] = useState<any>(null);
+  const [currentCategory, setCurrentCategory] = useState<{ id: number; name: string; description?: string } | null>(null);
   
   // 页面加载时获取数据
   useEffect(() => {
@@ -59,7 +58,7 @@ const CategoryPage: React.FC = () => {
     };
     
     loadData();
-  }, []);
+  }, [fetchCategories, fetchTags]);
   
   // 获取当前分类信息
   useEffect(() => {
@@ -79,7 +78,7 @@ const CategoryPage: React.FC = () => {
         status: 'published' // 只显示已发布的文章
       });
     }
-  }, [categoryId, searchParams]);
+  }, [categoryId, searchParams, fetchArticles]);
   
   // 搜索处理
   const handleSearch = (e: React.FormEvent) => {
@@ -133,7 +132,7 @@ const CategoryPage: React.FC = () => {
   };
   
   // 检查是否可以编辑/删除文章
-  const canEditArticle = (article: any) => {
+  const canEditArticle = (article: Article) => {
     return isAuthenticated && (user?.role === 'admin' || user?.id === article.author_id);
   };
 

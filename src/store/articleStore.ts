@@ -204,8 +204,8 @@ export const useArticleStore = create<ArticleState>()(
           set({ error: data.message || '获取文章详情失败', isLoading: false });
           return false;
         }
-      } catch (error) {
-        console.error('获取文章详情失败:', error);
+      } catch {
+        console.error('获取文章详情失败');
         set({ error: '网络请求失败', isLoading: false });
         return false;
       }
@@ -238,8 +238,8 @@ export const useArticleStore = create<ArticleState>()(
           set({ error: data.message || '创建文章失败', isLoading: false });
           return false;
         }
-      } catch (error) {
-        console.error('创建文章失败:', error);
+      } catch {
+        console.error('创建文章失败');
         set({ error: '网络请求失败', isLoading: false });
         return false;
       }
@@ -275,8 +275,8 @@ export const useArticleStore = create<ArticleState>()(
           set({ error: data.message || '更新文章失败', isLoading: false });
           return false;
         }
-      } catch (error) {
-        console.error('更新文章失败:', error);
+      } catch {
+        console.error('更新文章失败');
         set({ error: '网络请求失败', isLoading: false });
         return false;
       }
@@ -317,8 +317,8 @@ export const useArticleStore = create<ArticleState>()(
           set({ error: data.message || '删除文章失败', isLoading: false });
           return false;
         }
-      } catch (error) {
-        console.error('删除文章失败:', error);
+      } catch {
+        console.error('删除文章失败');
         set({ error: '网络请求失败', isLoading: false });
         return false;
       }
@@ -338,8 +338,8 @@ export const useArticleStore = create<ArticleState>()(
           set({ categories: [] });
           return false;
         }
-      } catch (error) {
-        console.error('获取分类列表失败:', error);
+      } catch {
+        console.error('获取分类列表失败');
         set({ categories: [] });
         return false;
       }
@@ -359,8 +359,8 @@ export const useArticleStore = create<ArticleState>()(
           set({ tags: [] });
           return false;
         }
-      } catch (error) {
-        console.error('获取标签列表失败:', error);
+      } catch {
+        console.error('获取标签列表失败');
         set({ tags: [] });
         return false;
       }
@@ -411,8 +411,8 @@ export const useArticleStore = create<ArticleState>()(
           set({ error: data.message || '点赞操作失败' });
           return false;
         }
-      } catch (error) {
-        console.error('点赞操作失败:', error);
+      } catch {
+        console.error('点赞操作失败');
         set({ error: '网络请求失败' });
         return false;
       }
@@ -455,8 +455,8 @@ export const useArticleStore = create<ArticleState>()(
         }
         
         return false;
-      } catch (error) {
-        console.error('检查点赞状态失败:', error);
+      } catch {
+        console.error('检查点赞状态失败');
         return false;
       }
     },
