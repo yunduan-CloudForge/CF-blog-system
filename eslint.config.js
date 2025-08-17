@@ -23,12 +23,6 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
-      // 暂时禁用以下规则以确保CI通过，后续逐步修复
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': 'warn',
-      '@typescript-eslint/no-namespace': 'warn',
-      'prefer-const': 'warn',
-      'no-useless-catch': 'warn',
     },
   },
 )

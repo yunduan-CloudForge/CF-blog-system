@@ -239,26 +239,45 @@ export async function closeDatabase(): Promise<void> {
   }
 }
 
+// 定义数据库操作结果类型
+interface DatabaseRunResult {
+  lastID?: number;
+  changes?: number;
+}
+
+interface DatabaseRecord {
+  [key: string]: unknown;
+  // 常用字段类型提示
+  id?: number;
+  count?: number;
+  total?: number;
+  lastID?: number;
+  changes?: number;
+}
+
 /**
  * 执行数据库查询
  */
-export async function query(sql: string, params: any[] = []): Promise<any[]> {
+export async function query(sql: string, params: unknown[] = []): Promise<DatabaseRecord[]> {
   const database = await getDatabase();
-  return database.all(sql, params);
+  const result = await database.all(sql, params);
+  return result as DatabaseRecord[];
 }
 
 /**
  * 执行数据库插入/更新/删除
  */
-export async function run(sql: string, params: any[] = []): Promise<any> {
+export async function run(sql: string, params: unknown[] = []): Promise<DatabaseRunResult> {
   const database = await getDatabase();
-  return database.run(sql, params);
+  const result = await database.run(sql, params);
+  return result as DatabaseRunResult;
 }
 
 /**
  * 获取单条记录
  */
-export async function get(sql: string, params: any[] = []): Promise<any> {
+export async function get(sql: string, params: unknown[] = []): Promise<DatabaseRecord | undefined> {
   const database = await getDatabase();
-  return database.get(sql, params);
+  const result = await database.get(sql, params);
+  return result as DatabaseRecord | undefined;
 }

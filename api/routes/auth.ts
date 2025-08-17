@@ -138,7 +138,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     }
 
     // 验证密码
-    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash as string);
     if (!isPasswordValid) {
       res.status(401).json({
         success: false,
@@ -187,7 +187,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
  */
 router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user?.userId;
     
     const user = await get(
       'SELECT id, email, username, role, avatar, bio, created_at FROM users WHERE id = ?',

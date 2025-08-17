@@ -213,18 +213,18 @@ router.get('/', optionalAuthMiddleware, async (req: Request, res: Response) => {
 
     // 合并所有评论
     const allComments: Comment[] = [...topLevelComments, ...allReplies].map(comment => ({
-      id: comment.id,
-      content: comment.content,
-      user_id: comment.user_id,
-      article_id: comment.article_id,
-      parent_id: comment.parent_id,
-      likes: comment.likes,
-      created_at: comment.created_at,
-      updated_at: comment.updated_at,
+      id: comment.id as number,
+      content: comment.content as string,
+      user_id: comment.user_id as number,
+      article_id: comment.article_id as number,
+      parent_id: comment.parent_id as number | null,
+      likes: comment.likes as number,
+      created_at: comment.created_at as string,
+      updated_at: comment.updated_at as string,
       user: {
-        id: comment.user_id,
-        username: comment.username,
-        avatar: comment.avatar
+        id: comment.user_id as number,
+        username: comment.username as string,
+        avatar: comment.avatar as string
       },
       is_liked: false,
       deleted: false
@@ -500,13 +500,13 @@ router.post('/:id/like', authMiddleware, async (req: Request, res: Response) => 
       // 取消点赞
       await run('DELETE FROM comment_likes WHERE user_id = ? AND comment_id = ?', [user.userId, commentId]);
       await run('UPDATE comments SET likes = likes - 1 WHERE id = ?', [commentId]);
-      newLikesCount = comment.likes - 1;
+      newLikesCount = (comment.likes as number) - 1;
       liked = false;
     } else {
       // 添加点赞
       await run('INSERT INTO comment_likes (user_id, comment_id) VALUES (?, ?)', [user.userId, commentId]);
       await run('UPDATE comments SET likes = likes + 1 WHERE id = ?', [commentId]);
-      newLikesCount = comment.likes + 1;
+      newLikesCount = (comment.likes as number) + 1;
       liked = true;
     }
 
@@ -560,7 +560,7 @@ router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
     }
 
     // 检查删除权限
-    if (!canDeleteComment(user, comment, article)) {
+    if (!canDeleteComment(user, comment as any, article as any)) {
       return res.status(403).json(createResponse(false, '无权删除此评论', null, {
         code: 'COMMENT_DELETE_FORBIDDEN',
         details: '只有评论作者、文章作者或管理员可以删除评论'

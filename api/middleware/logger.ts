@@ -33,7 +33,7 @@ interface LogData {
   action: string;
   resource: string;
   resource_id?: string | number;
-  details?: any;
+  details?: Record<string, unknown>;
   ip_address?: string;
   user_agent?: string;
   status: LogStatus;
@@ -97,7 +97,7 @@ export async function logToDatabase(logData: LogData): Promise<void> {
  * 广播用户活动到WebSocket客户端
  * @param activity 活动数据
  */
-function broadcastUserActivity(activity: any): void {
+function broadcastUserActivity(activity: Record<string, unknown>): void {
   try {
     // 动态导入WebSocket服务实例
     import('../server.js').then(({ realtimeService }) => {
@@ -132,7 +132,7 @@ export const logAction = (action: string, resource: string, options: {
     
     // 获取请求信息
     const getRequestInfo = () => {
-      const info: any = {
+      const info: Record<string, unknown> = {
         method: req.method,
         url: req.originalUrl,
         timestamp: new Date().toISOString(),
@@ -176,26 +176,30 @@ export const logAction = (action: string, resource: string, options: {
     };
     
     // 重写 res.send
-    res.send = function(data: any) {
+    res.send = function(data: unknown) {
       const status = res.statusCode >= 200 && res.statusCode < 300 ? LogStatus.SUCCESS : LogStatus.FAILED;
-      const errorMessage = status === LogStatus.FAILED ? data?.error || data?.message : undefined;
+      const errorMessage = status === LogStatus.FAILED ? 
+        (data && typeof data === 'object' && 'error' in data ? (data as any).error : 
+         data && typeof data === 'object' && 'message' in data ? (data as any).message : undefined) : undefined;
       writeLog(status, errorMessage);
       return originalSend.call(this, data);
     };
     
     // 重写 res.json
-    res.json = function(data: any) {
+    res.json = function(data: unknown) {
       const status = res.statusCode >= 200 && res.statusCode < 300 ? LogStatus.SUCCESS : LogStatus.FAILED;
-      const errorMessage = status === LogStatus.FAILED ? data?.error || data?.message : undefined;
+      const errorMessage = status === LogStatus.FAILED ? 
+        (data && typeof data === 'object' && 'error' in data ? (data as any).error : 
+         data && typeof data === 'object' && 'message' in data ? (data as any).message : undefined) : undefined;
       writeLog(status, errorMessage);
       return originalJson.call(this, data);
     };
     
     // 处理未捕获的错误
     const originalNext = next;
-    next = (error?: any) => {
+    next = (error?: Error | string) => {
       if (error) {
-        writeLog(LogStatus.FAILED, error.message || String(error));
+        writeLog(LogStatus.FAILED, (error as Error).message || String(error));
       }
       originalNext(error);
     };
@@ -262,14 +266,14 @@ export async function manualLog(
   action: string,
   resource: string,
   status: LogStatus,
-  details?: any,
+  details?: Record<string, unknown>,
   level: LogLevel = LogLevel.INFO
 ): Promise<void> {
   const logData: LogData = {
     user_id: req.user?.id,
     action,
     resource,
-    details: details ? JSON.stringify(details) : null,
+    details: details || null,
     ip_address: getClientIP(req),
     user_agent: req.get('User-Agent'),
     status,
@@ -302,7 +306,7 @@ function getClientIP(req: Request): string {
  * @param excludeFields 要排除的字段
  * @returns 过滤后的数据
  */
-function filterSensitiveData(data: any, excludeFields: string[] = []): any {
+function filterSensitiveData(data: Record<string, unknown>, excludeFields: string[] = []): Record<string, unknown> {
   if (!data || typeof data !== 'object') {
     return data;
   }
@@ -325,7 +329,7 @@ function filterSensitiveData(data: any, excludeFields: string[] = []): any {
  * @param headers 原始请求头
  * @returns 过滤后的请求头
  */
-function filterSensitiveHeaders(headers: any): any {
+function filterSensitiveHeaders(headers: Record<string, unknown>): Record<string, unknown> {
   const filtered = { ...headers };
   const sensitiveHeaders = ['authorization', 'cookie', 'x-api-key', 'x-auth-token'];
   
@@ -355,12 +359,12 @@ export async function queryLogs(filters: {
 }, pagination: {
   page: number;
   limit: number;
-}): Promise<{logs: any[], total: number}> {
+}): Promise<{logs: Record<string, unknown>[], total: number}> {
   return new Promise((resolve, reject) => {
     const db = new sqlite3.Database(dbPath);
     
     let whereClause = 'WHERE 1=1';
-    const params: any[] = [];
+    const params: unknown[] = [];
     
     if (filters.userId) {
       whereClause += ' AND user_id = ?';

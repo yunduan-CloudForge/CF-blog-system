@@ -303,10 +303,10 @@ router.get('/errors/:id', authMiddleware, async (req: Request, res: Response): P
 
     // 解析JSON字段
     if (errorReport.breadcrumbs) {
-      errorReport.breadcrumbs = JSON.parse(errorReport.breadcrumbs);
+      errorReport.breadcrumbs = JSON.parse(errorReport.breadcrumbs as string);
     }
     if (errorReport.context) {
-      errorReport.context = JSON.parse(errorReport.context);
+      errorReport.context = JSON.parse(errorReport.context as string);
     }
 
     res.json({
@@ -354,9 +354,9 @@ router.get('/health', async (req: Request, res: Response): Promise<void> => {
     `);
 
     // 计算健康分数
-    const errorCount = errorRate?.error_count || 0;
-    const loadTime = avgLoadTime?.avg_load_time || 0;
-    const sessions = activeSessions?.active_sessions || 0;
+    const errorCount = (errorRate?.error_count as number) || 0;
+    const loadTime = (avgLoadTime?.avg_load_time as number) || 0;
+    const sessions = (activeSessions?.active_sessions as number) || 0;
 
     let healthScore = 100;
     if (errorCount > 10) healthScore -= 20;

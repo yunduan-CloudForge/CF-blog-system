@@ -8,17 +8,20 @@ import jwt from 'jsonwebtoken';
 // JWT密钥（生产环境应该使用环境变量）
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
+// 定义用户信息类型
+interface UserInfo {
+  id: number;
+  userId: number;
+  email: string;
+  role: string;
+  username?: string;
+}
+
 // 扩展Request接口以包含用户信息
 declare global {
   namespace Express {
     interface Request {
-      user?: {
-        id: number;
-        userId: number;
-        email: string;
-        role: string;
-        username?: string;
-      };
+      user?: UserInfo;
     }
   }
 }
@@ -53,7 +56,12 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
     }
 
     // 验证令牌
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const decoded = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload & {
+      userId: number;
+      email: string;
+      role: string;
+      username?: string;
+    };
     
     // 将用户信息添加到请求对象
     req.user = {
@@ -147,7 +155,12 @@ export const optionalAuthMiddleware = (req: Request, res: Response, next: NextFu
     }
 
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const decoded = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload & {
+        userId: number;
+        email: string;
+        role: string;
+        username?: string;
+      };
       req.user = {
         id: decoded.userId,
         userId: decoded.userId,

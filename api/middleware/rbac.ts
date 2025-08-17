@@ -12,17 +12,20 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const dbPath = path.join(__dirname, '../../blog.db');
 
+// 定义用户信息类型
+interface UserInfo {
+  id: number;
+  userId: number;
+  email: string;
+  role: string;
+  username?: string;
+}
+
 // 扩展Request接口
 declare global {
   namespace Express {
     interface Request {
-      user?: {
-        id: number;
-        userId: number;
-        email: string;
-        role: string;
-        username?: string;
-      };
+      user?: UserInfo;
     }
   }
 }

@@ -7,6 +7,7 @@ import express from 'express';
 import sqlite3 from 'sqlite3';
 import path from 'path';
 import fs from 'fs';
+// import * as bcrypt from 'bcrypt'; // 暂时注释未使用的导入
 import nodemailer from 'nodemailer';
 import { authMiddleware } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
@@ -41,9 +42,9 @@ router.get('/permissions', authMiddleware, requirePermission('admin.permissions.
       return res.status(500).json({ error: '获取权限列表失败' });
     }
     
-    const permissions = rows.map((row: any) => ({
+    const permissions = rows.map((row: Record<string, unknown>) => ({
       ...row,
-      roles: row.roles ? row.roles.split(',') : []
+      roles: row.roles ? (row.roles as string).split(',') : []
     }));
     
     res.json({ data: permissions });
@@ -192,12 +193,12 @@ router.get('/stats', authMiddleware, requirePermission('admin.stats.read'), (req
     publishedArticles: 'SELECT COUNT(*) as count FROM articles WHERE status = "published"'
   };
   
-  const stats: any = {};
+  const stats: Record<string, number> = {};
   let completedQueries = 0;
   const totalQueries = Object.keys(queries).length;
   
   Object.entries(queries).forEach(([key, query]) => {
-    db.get(query, [], (err, row: any) => {
+    db.get(query, [], (err, row: { count: number }) => {
       if (err) {
         console.error(`Error in ${key} query:`, err);
         stats[key] = 0;

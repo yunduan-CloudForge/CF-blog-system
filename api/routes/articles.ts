@@ -31,8 +31,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const offset = (pageNum - 1) * limitNum;
 
     // 构建查询条件
-    const whereConditions = [];
-    const queryParams = [];
+    const whereConditions: string[] = [];
+    const queryParams: unknown[] = [];
 
     // 状态筛选
     if (status && status !== 'all') {
@@ -96,7 +96,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const articles = await query(articlesQuery, [...queryParams, limitNum, offset]);
 
     // 获取每篇文章的标签
-    for (const article of articles) {
+    for (const article of articles as any[]) {
       const tags = await query(`
         SELECT t.id, t.name, t.color
         FROM tags t
@@ -153,7 +153,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 router.get('/stats', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
     const { author } = req.query;
-    const userId = (req as any).user.userId;
+    const userId = req.user?.userId;
     
     // 如果指定了作者ID，检查权限（只能查看自己的统计或管理员权限）
     const targetAuthorId = author ? parseInt(author as string) : userId;
@@ -308,7 +308,7 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
 
     // 增加浏览量
     await run('UPDATE articles SET views = views + 1 WHERE id = ?', [id]);
-    article.views += 1;
+    article.views = (article.views as number) + 1;
 
     res.json({
       success: true,
@@ -601,14 +601,14 @@ router.post('/:id/like', authMiddleware, async (req: Request, res: Response): Pr
       // 用户已点赞，执行取消点赞
       await run('DELETE FROM article_likes WHERE user_id = ? AND article_id = ?', [userId, id]);
       await run('UPDATE articles SET likes = likes - 1 WHERE id = ?', [id]);
-      newLikes = Math.max(0, article.likes - 1);
+      newLikes = Math.max(0, (article.likes as number) - 1);
       liked = false;
       message = '取消点赞成功';
     } else {
       // 用户未点赞，执行点赞
       await run('INSERT INTO article_likes (user_id, article_id) VALUES (?, ?)', [userId, id]);
       await run('UPDATE articles SET likes = likes + 1 WHERE id = ?', [id]);
-      newLikes = article.likes + 1;
+      newLikes = (article.likes as number) + 1;
       liked = true;
       message = '点赞成功';
     }
