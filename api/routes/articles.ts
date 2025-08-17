@@ -96,7 +96,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const articles = await query(articlesQuery, [...queryParams, limitNum, offset]);
 
     // 获取每篇文章的标签
-    for (const article of articles as { id: number }[]) {
+    for (const article of articles as Array<{ id: number; tags?: unknown[] }>) {
       const tags = await query(`
         SELECT t.id, t.name, t.color
         FROM tags t

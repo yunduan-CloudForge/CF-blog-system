@@ -41,6 +41,23 @@ interface LogData {
   error_message?: string;
 }
 
+interface LogEntry {
+  id: number;
+  user_id?: number;
+  action: string;
+  resource: string;
+  resource_id?: string | number;
+  details?: string;
+  ip_address?: string;
+  user_agent?: string;
+  status: LogStatus;
+  level: LogLevel;
+  error_message?: string;
+  created_at: string;
+  username?: string;
+  email?: string;
+}
+
 /**
  * 记录操作日志到数据库
  * @param logData 日志数据
@@ -179,8 +196,8 @@ export const logAction = (action: string, resource: string, options: {
     res.send = function(data: unknown) {
       const status = res.statusCode >= 200 && res.statusCode < 300 ? LogStatus.SUCCESS : LogStatus.FAILED;
       const errorMessage = status === LogStatus.FAILED ? 
-        (data && typeof data === 'object' && 'error' in data ? (data as Record<string, unknown>).error : 
-         data && typeof data === 'object' && 'message' in data ? (data as Record<string, unknown>).message : undefined) : undefined;
+        (data && typeof data === 'object' && 'error' in data ? String((data as Record<string, unknown>).error) : 
+         data && typeof data === 'object' && 'message' in data ? String((data as Record<string, unknown>).message) : undefined) : undefined;
       writeLog(status, errorMessage);
       return originalSend.call(this, data);
     };
@@ -189,8 +206,8 @@ export const logAction = (action: string, resource: string, options: {
     res.json = function(data: unknown) {
       const status = res.statusCode >= 200 && res.statusCode < 300 ? LogStatus.SUCCESS : LogStatus.FAILED;
       const errorMessage = status === LogStatus.FAILED ? 
-        (data && typeof data === 'object' && 'error' in data ? (data as Record<string, unknown>).error : 
-         data && typeof data === 'object' && 'message' in data ? (data as Record<string, unknown>).message : undefined) : undefined;
+        (data && typeof data === 'object' && 'error' in data ? String((data as Record<string, unknown>).error) : 
+         data && typeof data === 'object' && 'message' in data ? String((data as Record<string, unknown>).message) : undefined) : undefined;
       writeLog(status, errorMessage);
       return originalJson.call(this, data);
     };
@@ -436,7 +453,7 @@ export async function queryLogs(filters: {
         
         resolve({
           logs,
-          total: countRow.total
+          total: countRow.count
         });
       });
     });
