@@ -48,7 +48,7 @@ app.use('/api/profile', profileRoutes);
 /**
  * health
  */
-app.use('/api/health', (req: Request, res: Response, next: NextFunction): void => {
+app.use('/api/health', (req: Request, res: Response): void => {
   res.status(200).json({
     success: true,
     message: 'ok'
@@ -58,7 +58,7 @@ app.use('/api/health', (req: Request, res: Response, next: NextFunction): void =
 /**
  * error handler middleware
  */
-app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
+app.use((error: Error, req: Request, res: Response, _next: NextFunction) => {
   res.status(500).json({
     success: false,
     error: 'Server internal error'

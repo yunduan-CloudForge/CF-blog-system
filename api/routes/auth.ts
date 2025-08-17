@@ -5,7 +5,7 @@
 import { Router, type Request, type Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { query, run, get } from '../database/connection';
+import { run, get } from '../database/connection';
 import { authMiddleware } from '../middleware/auth';
 
 const router = Router();

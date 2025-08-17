@@ -7,7 +7,6 @@ import express from 'express';
 import sqlite3 from 'sqlite3';
 import path from 'path';
 import fs from 'fs';
-import * as bcrypt from 'bcrypt';
 import nodemailer from 'nodemailer';
 import { authMiddleware } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';

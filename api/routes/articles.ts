@@ -5,7 +5,7 @@
 import { Router, type Request, type Response } from 'express';
 import { query, run, get } from '../database/connection';
 import { authMiddleware } from '../middleware/auth';
-import { logDetailedAction, logSimpleAction } from '../middleware/logger';
+import { logDetailedAction } from '../middleware/logger';
 
 const router = Router();
 
@@ -31,8 +31,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const offset = (pageNum - 1) * limitNum;
 
     // 构建查询条件
-    let whereConditions = [];
-    let queryParams = [];
+    const whereConditions = [];
+    const queryParams = [];
 
     // 状态筛选
     if (status && status !== 'all') {
