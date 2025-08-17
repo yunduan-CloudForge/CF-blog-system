@@ -12,7 +12,8 @@ import {
   Shield,
   Clock,
   Wifi,
-  WifiOff
+  WifiOff,
+  TrendingUp
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useAdminStore } from '../store/adminStore';

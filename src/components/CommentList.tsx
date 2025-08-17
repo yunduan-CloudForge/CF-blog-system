@@ -289,7 +289,7 @@ const CommentList: React.FC<CommentListProps> = ({
               <span className="text-sm text-gray-500">排序：</span>
               <select
                 value={sortBy}
-                onChange={(e) => onSortChange(e.target.value as any)}
+                onChange={(e) => onSortChange?.(e.target.value as 'newest' | 'oldest' | 'likes')}
                 className="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 {SORT_OPTIONS.map(option => (

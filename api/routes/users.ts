@@ -157,7 +157,7 @@ router.post('/',
           }
         });
       });
-    } catch (error) {
+    } catch (_error) {
       res.status(500).json({ error: '密码加密失败' });
     }
   }
@@ -241,7 +241,7 @@ router.put('/:id/password',
         
         res.json({ success: true, message: '密码重置成功' });
       });
-    } catch (error) {
+    } catch (_error) {
       res.status(500).json({ error: '密码加密失败' });
     }
   }

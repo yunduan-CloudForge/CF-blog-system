@@ -22,7 +22,7 @@ const createAuthenticatedRequest = (url: string, options: RequestInit = {}) => {
 };
 
 // 错误处理工具
-export const handleCommentError = (error: {response?: {status: number; data?: {message?: string}}; message?: string}): string => {
+export const handleCommentError = (error: {response?: {status: number; data?: {message?: string}}; request?: unknown; message?: string}): string => {
   if (error.response) {
     // API返回的错误
     switch (error.response.status) {

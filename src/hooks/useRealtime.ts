@@ -27,7 +27,7 @@ interface UserActivity {
   userId: number;
   action: string;
   timestamp: number;
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
 interface ConnectionState {
@@ -60,7 +60,7 @@ function setupGlobalSubscriptions(userRole?: string) {
   // 订阅统计数据
   const statsUnsubscribe = websocketService.subscribeToStats((data: RealtimeData) => {
     if (data.type === 'stats_update') {
-      globalRealtimeStats = data.data;
+      globalRealtimeStats = data.data as unknown as RealtimeStats;
       globalLastUpdate = data.timestamp;
       notifyListeners();
     }
@@ -71,7 +71,7 @@ function setupGlobalSubscriptions(userRole?: string) {
   if (userRole === 'admin') {
     const userActivityUnsubscribe = websocketService.subscribeToUserActivity((data: RealtimeData) => {
       if (data.type === 'user_activity') {
-        globalUserActivities = [data.data, ...globalUserActivities].slice(0, 50);
+        globalUserActivities = [data.data as unknown as UserActivity, ...globalUserActivities].slice(0, 50);
         notifyListeners();
       }
     });

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAdminStore } from '@/store/adminStore';
+import { useAdminStore, type AdminUser } from '@/store/adminStore';
 import { AdminPage } from '@/components/AdminLayout';
 import toast from 'react-hot-toast';
 import {
@@ -11,8 +11,7 @@ import {
   Key,
   Shield,
   Mail,
-  Calendar,
-  MoreHorizontal
+  Calendar
 } from 'lucide-react';
 
 interface UserFormData {
@@ -38,7 +37,7 @@ export default function AdminUsers() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [formData, setFormData] = useState<UserFormData>({
     email: '',
     username: '',
@@ -47,12 +46,12 @@ export default function AdminUsers() {
     bio: ''
   });
   const [newPassword, setNewPassword] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage] = useState(1);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchUsers(currentPage, 10);
-  }, [currentPage]);
+  }, [currentPage, fetchUsers]);
 
   // 过滤用户
   const filteredUsers = users.filter(user =>
@@ -75,7 +74,7 @@ export default function AdminUsers() {
       } else {
         toast.error('用户创建失败');
       }
-    } catch (error) {
+    } catch {
       toast.error('创建用户时发生错误');
     } finally {
       setLoading(false);
@@ -89,6 +88,7 @@ export default function AdminUsers() {
 
     setLoading(true);
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ...updateData } = formData;
       const success = await updateUser(selectedUser.id, updateData);
       if (success) {
@@ -99,7 +99,7 @@ export default function AdminUsers() {
       } else {
         toast.error('用户更新失败');
       }
-    } catch (error) {
+    } catch {
       toast.error('更新用户时发生错误');
     } finally {
       setLoading(false);
@@ -107,7 +107,7 @@ export default function AdminUsers() {
   };
 
   // 处理删除用户
-  const handleDeleteUser = async (user: any) => {
+  const handleDeleteUser = async (user: AdminUser) => {
     if (!confirm(`确定要删除用户 "${user.username}" 吗？此操作不可撤销。`)) {
       return;
     }
@@ -119,7 +119,7 @@ export default function AdminUsers() {
       } else {
         toast.error('用户删除失败');
       }
-    } catch (error) {
+    } catch {
       toast.error('删除用户时发生错误');
     }
   };
@@ -140,7 +140,7 @@ export default function AdminUsers() {
       } else {
         toast.error('密码重置失败');
       }
-    } catch (error) {
+    } catch {
       toast.error('重置密码时发生错误');
     } finally {
       setLoading(false);
@@ -159,7 +159,7 @@ export default function AdminUsers() {
   };
 
   // 打开编辑模态框
-  const openEditModal = (user: any) => {
+  const openEditModal = (user: AdminUser) => {
     setSelectedUser(user);
     setFormData({
       email: user.email,
@@ -172,7 +172,7 @@ export default function AdminUsers() {
   };
 
   // 打开密码重置模态框
-  const openPasswordModal = (user: any) => {
+  const openPasswordModal = (user: AdminUser) => {
     setSelectedUser(user);
     setNewPassword('');
     setShowPasswordModal(true);
@@ -380,7 +380,7 @@ export default function AdminUsers() {
                 </label>
                 <select
                   value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'author' | 'user' })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="user">用户</option>
@@ -459,7 +459,7 @@ export default function AdminUsers() {
                 </label>
                 <select
                   value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'author' | 'user' })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="user">用户</option>

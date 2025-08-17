@@ -10,11 +10,8 @@ import {
   Mail,
   Shield,
   Database,
-  Bell,
-  Palette,
   Save,
   RefreshCw,
-  Upload,
   Download,
   AlertTriangle,
   Check,
@@ -299,9 +296,9 @@ export default function AdminSettings() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [fetchSettings, handleSaveSettings]);
 
-  const updateSetting = (key: keyof SystemSettings, value: any) => {
+  const updateSetting = (key: keyof SystemSettings, value: string | number | boolean) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
@@ -365,7 +362,7 @@ export default function AdminSettings() {
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id as any)}
+                    onClick={() => setActiveTab(tab.id as 'general' | 'mail' | 'security' | 'content' | 'system')}
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
                       activeTab === tab.id
                         ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'

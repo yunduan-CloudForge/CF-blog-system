@@ -23,8 +23,8 @@ interface ErrorReport {
   userAgent: string;
   userId?: string;
   sessionId: string;
-  breadcrumbs: any[];
-  context?: Record<string, any>;
+  breadcrumbs: Record<string, unknown>[];
+  context?: Record<string, unknown>;
 }
 
 // 性能指标接口
@@ -94,7 +94,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
 router.get('/errors/stats', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
     const { timeRange = '24h' } = req.query;
-    const user = (req as any).user;
+    const user = (req as { user: { role: string; userId: number } }).user;
 
     // 检查管理员权限
     if (user.role !== 'admin') {
@@ -106,7 +106,7 @@ router.get('/errors/stats', authMiddleware, async (req: Request, res: Response):
     }
 
     // 计算时间范围
-    const timeCondition = getTimeCondition(timeRange as string);
+    const timeCondition = getTimeCondition(String(timeRange));
 
     // 获取错误统计
     const errorStats = await query(`
@@ -184,7 +184,7 @@ router.get('/errors/stats', authMiddleware, async (req: Request, res: Response):
 router.get('/performance/stats', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
     const { timeRange = '24h' } = req.query;
-    const user = (req as any).user;
+    const user = (req as { user: { role: string; userId: number } }).user;
 
     // 检查管理员权限
     if (user.role !== 'admin') {
@@ -195,7 +195,7 @@ router.get('/performance/stats', authMiddleware, async (req: Request, res: Respo
       return;
     }
 
-    const timeCondition = getTimeCondition(timeRange as string);
+    const timeCondition = getTimeCondition(String(timeRange));
 
     // 获取性能指标统计
     const performanceStats = await query(`
@@ -354,9 +354,9 @@ router.get('/health', async (req: Request, res: Response): Promise<void> => {
     `);
 
     // 计算健康分数
-    const errorCount = (errorRate?.error_count as number) || 0;
-    const loadTime = (avgLoadTime?.avg_load_time as number) || 0;
-    const sessions = (activeSessions?.active_sessions as number) || 0;
+    const errorCount = (errorRate?.error_count as unknown as number) || 0;
+    const loadTime = (avgLoadTime?.avg_load_time as unknown as number) || 0;
+    const sessions = (activeSessions?.active_sessions as unknown as number) || 0;
 
     let healthScore = 100;
     if (errorCount > 10) healthScore -= 20;

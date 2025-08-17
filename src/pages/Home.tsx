@@ -4,6 +4,11 @@ import { LogIn, UserPlus, LogOut, User, BookOpen, PenTool, Shield, Search, Calen
 import { useAuthStore, authAPI } from '../store/authStore';
 import { useArticleStore, type Article, type Category } from '../store/articleStore';
 
+// 扩展Category接口以包含文章数量
+interface CategoryWithCount extends Category {
+  article_count?: number;
+}
+
 export default function Home() {
   const { user, isAuthenticated, isLoading, getCurrentUser } = useAuthStore();
   const { articles, categories, fetchArticles, fetchCategories } = useArticleStore();
@@ -266,7 +271,7 @@ export default function Home() {
                     >
                       <span className="text-gray-700">{category.name}</span>
                       <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                         {(category as Category & { article_count?: number }).article_count || 0}
+                         {(category as CategoryWithCount).article_count || 0}
                        </span>
                     </Link>
                   ))}

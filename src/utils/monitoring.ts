@@ -168,10 +168,16 @@ class MonitoringSystem {
     window.addEventListener('error', (event) => {
       if (event.target !== window) {
         const target = event.target as HTMLElement;
+        let filename = '';
+        if ('src' in target && typeof target.src === 'string') {
+          filename = target.src;
+        } else if ('href' in target && typeof target.href === 'string') {
+          filename = target.href;
+        }
         this.captureError({
           type: 'resource',
           message: `Failed to load resource: ${target.tagName}`,
-          filename: (target as HTMLImageElement | HTMLLinkElement).src || (target as HTMLLinkElement).href
+          filename
         });
       }
     }, true);

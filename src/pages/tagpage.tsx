@@ -45,7 +45,7 @@ const TagPage: React.FC = () => {
   
   // 本地状态
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
-  const [currentTag, setCurrentTag] = useState<{id: number; name: string; description?: string} | null>(null);
+  const [currentTag, setCurrentTag] = useState<{id: number; name: string; description?: string; color?: string} | null>(null);
   
   // 页面加载时获取数据
   useEffect(() => {
@@ -67,13 +67,6 @@ const TagPage: React.FC = () => {
     }
   }, [tags, tagId]);
 
-  // 获取文章数据
-  useEffect(() => {
-    if (tagId) {
-      fetchArticles({ tag: tagId });
-    }
-  }, [tagId, fetchArticles]);
-  
   // 获取标签文章
   useEffect(() => {
     if (tagId) {

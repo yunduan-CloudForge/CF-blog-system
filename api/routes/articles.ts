@@ -193,7 +193,7 @@ router.get('/stats', authMiddleware, async (req: Request, res: Response): Promis
         WHERE a.author_id = ?
       `, [targetAuthorId]);
       totalComments = commentStats?.total || 0;
-    } catch (error) {
+    } catch (_error) {
       // 如果评论表不存在，忽略错误
       console.log('评论表可能不存在，跳过评论统计');
     }

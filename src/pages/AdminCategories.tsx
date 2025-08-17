@@ -67,7 +67,7 @@ export default function AdminCategories() {
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+  }, [fetchCategories]);
 
   // 过滤和分页
   const filteredCategories = categories.filter(category =>

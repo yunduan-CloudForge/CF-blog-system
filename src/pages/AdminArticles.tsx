@@ -166,7 +166,7 @@ export default function AdminArticles() {
 
   useEffect(() => {
     fetchArticles();
-  }, [currentPage, searchTerm, statusFilter]);
+  }, [currentPage, searchTerm, statusFilter, fetchArticles]);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {

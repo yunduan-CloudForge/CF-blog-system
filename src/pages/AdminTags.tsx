@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { 
   Search, 
   Plus, 
@@ -7,8 +6,7 @@ import {
   Trash2, 
   FileText,
   Calendar,
-  Tag,
-  Palette
+  Tag
 } from 'lucide-react';
 import AdminNavigation from '../components/AdminNavigation';
 import { authAPI } from '../store/authStore';
@@ -46,6 +44,7 @@ export default function AdminTags() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [totalPages, setTotalPages] = useState(1);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -81,7 +80,7 @@ export default function AdminTags() {
 
   useEffect(() => {
     fetchTags();
-  }, []);
+  }, [fetchTags]);
 
   // 过滤和分页
   const filteredTags = tags.filter(tag =>
@@ -139,9 +138,9 @@ export default function AdminTags() {
         resetForm();
         fetchTags();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('创建标签失败:', error);
-      const message = error.response?.data?.message || '创建标签失败';
+      const message = (error as { response?: { data?: { message?: string } } }).response?.data?.message || '创建标签失败';
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -169,9 +168,9 @@ export default function AdminTags() {
         resetForm();
         fetchTags();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('更新标签失败:', error);
-      const message = error.response?.data?.message || '更新标签失败';
+      const message = (error as { response?: { data?: { message?: string } } }).response?.data?.message || '更新标签失败';
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -192,9 +191,9 @@ export default function AdminTags() {
         setTagToDelete(null);
         fetchTags();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('删除标签失败:', error);
-      const message = error.response?.data?.message || '删除标签失败';
+      const message = (error as { response?: { data?: { message?: string } } }).response?.data?.message || '删除标签失败';
       toast.error(message);
     }
   };

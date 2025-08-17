@@ -50,7 +50,7 @@ const ArticleDetail: React.FC = () => {
     if (id) {
       fetchArticleById(parseInt(id));
     }
-  }, [id]);
+  }, [id, fetchArticleById]);
   
   // 检查用户点赞状态
   useEffect(() => {

@@ -378,7 +378,7 @@ export function useCache<T>(key: string, fetcher: () => Promise<T>, options: {
       // 尝试从缓存获取
       const cached = cache.get(key);
       if (cached !== null) {
-        setData(cached);
+        setData(cached as T);
         return;
       }
 

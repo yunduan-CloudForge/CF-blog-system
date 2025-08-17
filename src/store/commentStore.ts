@@ -109,16 +109,16 @@ const handleCommentError = (error: unknown): string => {
       case 429:
         return '操作过于频繁，请稍后再试';
       default:
-        return error.message || '操作失败，请重试';
+        return (error as { message?: string }).message || '操作失败，请重试';
     }
   }
   // 如果是网络错误或其他错误
-  else if (error.name === 'TypeError' || error.message?.includes('fetch')) {
+  else if ((error as { name?: string }).name === 'TypeError' || (error as { message?: string }).message?.includes('fetch')) {
     return '网络连接失败，请检查网络设置';
   }
   // 其他错误
   else {
-    return error.message || '未知错误，请重试';
+    return (error as { message?: string }).message || '未知错误，请重试';
   }
 };
 

@@ -41,14 +41,6 @@ interface Comment {
   deleted?: boolean;
 }
 
-// 分页参数类型
-interface PaginationParams {
-  page: number;
-  limit: number;
-  sort: string;
-  order: 'asc' | 'desc';
-}
-
 /**
  * 创建统一的API响应
  */

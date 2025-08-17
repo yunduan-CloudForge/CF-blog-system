@@ -58,7 +58,7 @@ app.use('/api/health', (req: Request, res: Response): void => {
 /**
  * error handler middleware
  */
-app.use((error: Error, req: Request, res: Response, _next: NextFunction) => {
+app.use((error: Error, req: Request, res: Response, _: NextFunction) => {
   res.status(500).json({
     success: false,
     error: 'Server internal error'

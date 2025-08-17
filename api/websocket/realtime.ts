@@ -16,7 +16,7 @@ interface AuthenticatedWebSocket extends WebSocket {
 
 interface RealtimeData {
   type: 'stats_update' | 'user_activity' | 'system_status' | 'connection_success' | 'pong';
-  data: any;
+  data: Record<string, unknown>;
   timestamp: number;
 }
 
@@ -45,7 +45,7 @@ class RealtimeService {
       ws.isAlive = true;
       
       // 处理认证
-      this.authenticateConnection(ws, request);
+      this.authenticateConnection(ws, request as { url: string; headers: { host?: string; authorization?: string; } });
       
       // 处理消息
       ws.on('message', (message) => {
@@ -76,7 +76,7 @@ class RealtimeService {
     });
   }
 
-  private async authenticateConnection(ws: AuthenticatedWebSocket, request: any) {
+  private async authenticateConnection(ws: AuthenticatedWebSocket, request: { url: string; headers: { host?: string; authorization?: string } }) {
     try {
       // 从查询参数或头部获取token
       const url = new URL(request.url, `http://${request.headers.host}`);
@@ -88,7 +88,7 @@ class RealtimeService {
       }
       
       // 验证JWT token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as { userId: number; role: string };
       
       if (!decoded || !decoded.userId) {
         ws.close(1008, '无效的认证token');
@@ -123,7 +123,7 @@ class RealtimeService {
     }
   }
 
-  private handleMessage(ws: AuthenticatedWebSocket, data: any) {
+  private handleMessage(ws: AuthenticatedWebSocket, data: { type: string; [key: string]: unknown }) {
     console.log('收到WebSocket消息:', data);
     
     switch (data.type) {
@@ -273,7 +273,7 @@ class RealtimeService {
   }
 
   // 公共方法：广播用户活动
-  public broadcastUserActivity(activity: any) {
+  public broadcastUserActivity(activity: Record<string, unknown>) {
     this.broadcast({
       type: 'user_activity',
       data: activity,
@@ -282,7 +282,7 @@ class RealtimeService {
   }
 
   // 公共方法：广播系统状态
-  public broadcastSystemStatus(status: any) {
+  public broadcastSystemStatus(status: Record<string, unknown>) {
     this.broadcast({
       type: 'system_status',
       data: status,

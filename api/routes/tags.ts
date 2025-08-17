@@ -133,7 +133,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response): Promise<vo
     }
 
     // 验证颜色格式（可选）
-    let tagColor = color || '#3B82F6'; // 默认蓝色
+    const tagColor = color || '#3B82F6'; // 默认蓝色
     if (color && !/^#[0-9A-Fa-f]{6}$/.test(color)) {
       res.status(400).json({
         success: false,
@@ -219,7 +219,7 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response): Promise<
     }
 
     // 验证颜色格式（可选）
-    let tagColor = color || '#3B82F6'; // 默认蓝色
+    const tagColor = color || '#3B82F6'; // 默认蓝色
     if (color && !/^#[0-9A-Fa-f]{6}$/.test(color)) {
       res.status(400).json({
         success: false,
@@ -367,7 +367,7 @@ router.post('/batch', authMiddleware, async (req: Request, res: Response): Promi
         }
 
         // 验证颜色格式
-        let tagColor = color || '#3B82F6';
+        const tagColor = color || '#3B82F6';
         if (color && !/^#[0-9A-Fa-f]{6}$/.test(color)) {
           errors.push(`标签 "${name}" 的颜色格式不正确`);
           continue;

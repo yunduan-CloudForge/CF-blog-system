@@ -12,7 +12,7 @@ import {
   Heart, 
   Calendar, 
   User, 
-  Tag, 
+  Tag as TagIcon, 
   ChevronLeft, 
   ChevronRight,
   Edit,
@@ -20,12 +20,12 @@ import {
   LogOut,
   BookOpen
 } from 'lucide-react';
-import { useArticleStore } from '../store/articleStore';
+import { useArticleStore, Article, Tag } from '../store/articleStore';
 import { useAuthStore, authAPI } from '../store/authStore';
 
 // 文章卡片组件 - 使用React.memo优化
 const ArticleCard = React.memo<{
-  article: any;
+  article: Article;
   canEdit: boolean;
   onLike: (id: number) => void;
   onDelete: (id: number) => void;
@@ -99,12 +99,12 @@ const ArticleCard = React.memo<{
                 {article.category.name}
               </span>
             )}
-            {article.tags && article.tags.slice(0, 2).map((tag: any) => (
+            {article.tags && article.tags.slice(0, 2).map((tag: Tag) => (
               <span
                 key={tag.id}
                 className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800"
               >
-                <Tag className="h-3 w-3 mr-1" />
+                <TagIcon className="h-3 w-3 mr-1" />
                 {tag.name}
               </span>
             ))}
@@ -180,7 +180,7 @@ const ArticleList: React.FC = () => {
     };
     
     loadData();
-  }, [searchParams]);
+  }, [searchParams, fetchCategories, fetchTags, fetchArticles]);
   
   // 使用useCallback优化函数，避免不必要的重新渲染
   const updateSearchParams = useCallback((params: Record<string, string>) => {
@@ -263,7 +263,7 @@ const ArticleList: React.FC = () => {
   
   // 检查是否可以编辑/删除文章 - 使用useMemo优化
   const canEditArticle = useMemo(() => {
-    return (article: any) => {
+    return (article: Article) => {
       return isAuthenticated && (user?.role === 'admin' || user?.id === article.author_id);
     };
   }, [isAuthenticated, user?.role, user?.id]);
@@ -274,7 +274,7 @@ const ArticleList: React.FC = () => {
       if (selectedCategory && article.category?.id !== parseInt(selectedCategory)) {
         return false;
       }
-      if (selectedTag && !article.tags?.some((tag: any) => tag.id === parseInt(selectedTag))) {
+      if (selectedTag && !article.tags?.some((tag: Tag) => tag.id === parseInt(selectedTag))) {
         return false;
       }
       if (selectedStatus && article.status !== selectedStatus) {

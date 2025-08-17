@@ -18,6 +18,7 @@ export interface Article {
   likes: number;
   created_at: string;
   updated_at: string;
+  cover_image?: string;
   isLiked?: boolean;
   author?: {
     id: number;

@@ -222,7 +222,7 @@ export default function AdminPermissions() {
       setLoading(false);
     };
     loadData();
-  }, []);
+  }, [fetchPermissions, fetchRolePermissions]);
 
   const filteredPermissions = permissions.filter(permission =>
     permission.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

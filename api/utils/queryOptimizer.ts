@@ -5,10 +5,28 @@
 
 import { query, get, run } from '../database/connection';
 
+// 文章接口
+interface Article {
+  id: number;
+  title: string;
+  content: string;
+  status: string;
+  tags?: Tag[];
+  [key: string]: unknown;
+}
+
+// 标签接口
+interface Tag {
+  id: number;
+  name: string;
+  color: string;
+  article_id?: number;
+}
+
 // 查询缓存接口
 interface QueryCache {
   [key: string]: {
-    data: any;
+    data: unknown;
     timestamp: number;
     ttl: number;
   };
@@ -20,7 +38,7 @@ interface QueryPerformance {
   sql: string;
   executionTime: number;
   resultCount: number;
-  parameters?: any[];
+  parameters?: unknown[];
   userId?: number;
   ipAddress?: string;
 }
@@ -312,7 +330,7 @@ export class QueryOptimizer {
 
     // 批量获取标签（优化N+1查询）
     if (articles.length > 0) {
-      const articleIds = articles.map((a: any) => a.id).join(',');
+      const articleIds = (articles as Article[]).map((a) => a.id).join(',');
       const tagsQuery = `
         SELECT 
           at.article_id,
@@ -338,8 +356,8 @@ export class QueryOptimizer {
       );
 
       // 组织标签数据
-      const tagsByArticle: { [key: number]: any[] } = {};
-      allTags.forEach((tag: any) => {
+      const tagsByArticle: { [key: number]: Tag[] } = {};
+      (allTags as Tag[]).forEach((tag) => {
         if (!tagsByArticle[tag.article_id]) {
           tagsByArticle[tag.article_id] = [];
         }
@@ -351,7 +369,7 @@ export class QueryOptimizer {
       });
 
       // 将标签添加到文章
-      articles.forEach((article: any) => {
+      (articles as Article[]).forEach((article) => {
         article.tags = tagsByArticle[article.id] || [];
       });
     }

@@ -2,7 +2,7 @@
  * 文章编辑/创建页面
  * 支持Markdown编辑
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -14,12 +14,11 @@ import {
   Folder,
   AlertCircle,
   Image,
-  Upload,
-  X
+  Upload
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { useArticleStore, Article, Category, Tag } from '../store/articleStore';
+import { useArticleStore } from '../store/articleStore';
 import { useAuthStore } from '../store/authStore';
 
 const ArticleEditor: React.FC = () => {
@@ -76,7 +75,7 @@ const ArticleEditor: React.FC = () => {
         return;
       }
     }
-  }, [isAuthenticated, isEditing, currentArticle, user]);
+  }, [isAuthenticated, isEditing, currentArticle, user, navigate]);
   
   // 页面加载时获取数据
   useEffect(() => {
@@ -92,7 +91,7 @@ const ArticleEditor: React.FC = () => {
     };
     
     loadData();
-  }, [id, isEditing]);
+  }, [id, isEditing, fetchCategories, fetchTags, fetchArticleById]);
   
   // 当获取到文章数据时，填充表单
   useEffect(() => {
@@ -179,7 +178,7 @@ const ArticleEditor: React.FC = () => {
   };
   
   // 自动保存功能
-  const autoSave = async () => {
+  const autoSave = useCallback(async () => {
     if (!formData.title.trim() || !formData.content.trim()) {
       return; // 标题和内容为空时不自动保存
     }
@@ -216,7 +215,7 @@ const ArticleEditor: React.FC = () => {
     } finally {
       setAutoSaving(false);
     }
-  };
+  }, [formData, isEditing, id, updateArticle, createArticle]);
   
   // 自动保存定时器
   useEffect(() => {
@@ -225,14 +224,14 @@ const ArticleEditor: React.FC = () => {
     }, 30000); // 每30秒自动保存一次
     
     return () => clearInterval(timer);
-  }, [formData, isEditing, id]);
+  }, [formData, isEditing, id, autoSave]);
   
   // 监听表单变化，重置最后保存时间
   useEffect(() => {
     if (lastSaved) {
       setLastSaved(null);
     }
-  }, [formData.title, formData.content, formData.summary]);
+  }, [formData.title, formData.content, formData.summary, lastSaved]);
   
   // 图片上传功能
   const uploadImage = async (file: File) => {
