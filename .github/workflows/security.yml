@@ -24,7 +24,7 @@ jobs:
         output: 'trivy-results.sarif'
     
     - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       if: always()
       with:
         sarif_file: 'trivy-results.sarif'
@@ -58,11 +58,12 @@ jobs:
     - name: Run TypeScript check
       run: npm run check
     
-    - name: SonarCloud Scan
-      uses: SonarSource/sonarcloud-github-action@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    # SonarCloud扫描已移除 - 如需启用请配置SONAR_TOKEN
+    # - name: SonarCloud Scan
+    #   uses: SonarSource/sonarcloud-github-action@master
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   docker-security:
     runs-on: ubuntu-latest

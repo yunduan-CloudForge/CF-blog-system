@@ -28,9 +28,13 @@ RUN apk add --no-cache \
     curl \
     && apk upgrade --no-cache
 
-# 创建应用用户
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+# 创建应用用户（如果不存在）
+RUN if ! getent group nodejs > /dev/null 2>&1; then \
+        addgroup -g 1001 -S nodejs; \
+    fi && \
+    if ! getent passwd nodejs > /dev/null 2>&1; then \
+        adduser -S nodejs -u 1001 -G nodejs; \
+    fi
 
 # 设置工作目录
 WORKDIR /app

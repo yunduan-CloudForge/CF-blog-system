@@ -25,9 +25,13 @@ FROM nginx:alpine AS production
 # 安装必要的工具
 RUN apk add --no-cache curl
 
-# 创建nginx用户
-RUN addgroup -g 1001 -S nginx && \
-    adduser -S nginx -u 1001
+# 创建nginx用户（如果不存在）
+RUN if ! getent group nginx > /dev/null 2>&1; then \
+        addgroup -g 1001 -S nginx; \
+    fi && \
+    if ! getent passwd nginx > /dev/null 2>&1; then \
+        adduser -S nginx -u 1001 -G nginx; \
+    fi
 
 # 复制构建产物
 COPY --from=builder /app/dist /usr/share/nginx/html
