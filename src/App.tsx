@@ -18,7 +18,7 @@ import SystemStatus from "@/pages/SystemStatus";
 import AdminCategories from "@/pages/AdminCategories";
 import AdminTags from "@/pages/AdminTags";
 import CategoryPage from "@/pages/CategoryPage";
-import TagPage from "@/pages/TagPage";
+import TagPage from "@/pages/tagpage";
 import UserCenter from "@/pages/UserCenter";
 import MyArticles from "@/pages/MyArticles";
 
