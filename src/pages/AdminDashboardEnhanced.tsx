@@ -11,12 +11,8 @@ import {
   Tags, 
   Activity, 
   TrendingUp,
-  Shield,
-  AlertTriangle,
-  Clock,
   BarChart3,
   Eye,
-  Heart,
   Server,
   Database,
   Cpu,
@@ -24,13 +20,13 @@ import {
 } from 'lucide-react';
 import RealtimeMonitor from '../components/RealtimeMonitor';
 import { TrendChart, PieChart, StatCard, chartTheme, BarChart } from '../components/charts';
-import { useAuthStore } from '../store/authStore';
+// import { useAuthStore } from '../store/authStore'; // 暂时未使用
 import { useAdminStore } from '../store/adminStore';
 import { toast } from 'sonner';
 import AdminLayout from '../components/AdminLayout';
 
 const AdminDashboardEnhanced: React.FC = () => {
-  const { user, token } = useAuthStore();
+  // const { user, token } = useAuthStore(); // 暂时未使用
   const { 
     dashboardStats, 
     dashboardLoading, 
@@ -47,8 +43,8 @@ const AdminDashboardEnhanced: React.FC = () => {
   const initializeData = async () => {
     try {
       await fetchDashboardStats();
-    } catch (error) {
-      console.error('初始化数据失败:', error);
+    } catch {
+      console.error('初始化数据失败');
       toast.error('加载数据失败');
     } finally {
       setIsLoading(false);
@@ -61,19 +57,19 @@ const AdminDashboardEnhanced: React.FC = () => {
     try {
       await fetchDashboardStats();
       toast.success('数据已刷新');
-    } catch (error) {
+    } catch {
       toast.error('刷新失败');
     } finally {
       setRefreshing(false);
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('zh-CN', {
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  // const formatDate = (dateString: string) => { // 暂时未使用
+  //   return new Date(dateString).toLocaleDateString('zh-CN', {
+  //     month: 'short',
+  //     day: 'numeric'
+  //   });
+  // };
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -192,7 +188,7 @@ const AdminDashboardEnhanced: React.FC = () => {
               data={trends?.users || []}
               type="area"
               color={chartTheme.colors.primary}
-              formatTooltip={(value) => [value, '新增用户']}
+              formatTooltip={(value) => [String(value), '新增用户']}
             />
           </div>
         </div>
@@ -210,7 +206,7 @@ const AdminDashboardEnhanced: React.FC = () => {
               data={trends?.articles || []}
               type="line"
               color={chartTheme.colors.secondary}
-              formatTooltip={(value) => [value, '发布文章']}
+              formatTooltip={(value) => [String(value), '发布文章']}
             />
           </div>
         </div>
@@ -232,7 +228,7 @@ const AdminDashboardEnhanced: React.FC = () => {
                 value: item.count
               }))}
               colors={chartTheme.palette}
-              formatTooltip={(value) => [value, '文章数']}
+              formatTooltip={(value) => [String(value), '文章数']}
               showLegend
             />
           </div>
@@ -254,7 +250,7 @@ const AdminDashboardEnhanced: React.FC = () => {
               }))}
               layout="horizontal"
               color={chartTheme.colors.accent}
-              formatTooltip={(value) => [value, '浏览量']}
+              formatTooltip={(value) => [String(value), '浏览量']}
             />
           </div>
         </div>

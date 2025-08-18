@@ -12,6 +12,16 @@ import { requirePermission } from '../middleware/rbac';
 import { logDetailedAction, logSecurityAction } from '../middleware/logger';
 import { fileURLToPath } from 'url';
 
+// 数据库查询结果接口
+interface CountResult {
+  count: number;
+  total?: number;
+}
+
+interface StatsResult {
+  [key: string]: number;
+}
+
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,7 +39,7 @@ router.get('/', authMiddleware, requirePermission('users.read'), (req, res) => {
   const db = new sqlite3.Database(dbPath);
   
   let whereClause = '';
-  const params: any[] = [];
+  const params: (string | number)[] = [];
   
   if (search) {
     whereClause += ' AND (username LIKE ? OR email LIKE ?)';
@@ -38,7 +48,7 @@ router.get('/', authMiddleware, requirePermission('users.read'), (req, res) => {
   
   if (role) {
     whereClause += ' AND role = ?';
-    params.push(role);
+    params.push(String(role));
   }
   
   const validSortColumns = ['id', 'username', 'email', 'role', 'created_at'];
@@ -61,7 +71,7 @@ router.get('/', authMiddleware, requirePermission('users.read'), (req, res) => {
   `;
   
   // 获取总数
-  db.get(countQuery, params, (err, countRow: any) => {
+  db.get(countQuery, params, (err, countRow: CountResult) => {
     if (err) {
       db.close();
       return res.status(500).json({ error: '获取用户总数失败' });
@@ -157,7 +167,7 @@ router.post('/',
           }
         });
       });
-    } catch (_error) {
+    } catch {
       res.status(500).json({ error: '密码加密失败' });
     }
   }
@@ -241,7 +251,7 @@ router.put('/:id/password',
         
         res.json({ success: true, message: '密码重置成功' });
       });
-    } catch (_error) {
+    } catch {
       res.status(500).json({ error: '密码加密失败' });
     }
   }
@@ -292,12 +302,12 @@ router.get('/stats/overview', authMiddleware, requirePermission('users.read'), (
     activeUsers: 'SELECT COUNT(DISTINCT user_id) as count FROM comments WHERE created_at >= date("now", "-30 days")'
   };
   
-  const stats: any = {};
+  const stats: StatsResult = {};
   let completedQueries = 0;
   const totalQueries = Object.keys(queries).length;
   
   Object.entries(queries).forEach(([key, query]) => {
-    db.get(query, [], (err, row: any) => {
+    db.get(query, [], (err, row: CountResult) => {
       if (err) {
         console.error(`Error in ${key} query:`, err);
         stats[key] = 0;

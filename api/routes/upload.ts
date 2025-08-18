@@ -55,7 +55,7 @@ router.post('/image', authMiddleware, upload.single('image'), async (req: Reques
       return;
     }
 
-    const _userId = (req as any).user.userId;
+    // 用户已通过认证中间件验证
     const file = req.file;
     
     // 生成唯一文件名
@@ -122,7 +122,7 @@ router.post('/images', authMiddleware, upload.array('images', 5), async (req: Re
       return;
     }
 
-    const _userId = (req as any).user.userId;
+    // 用户已通过认证中间件验证
     const uploadedFiles = [];
     
     for (const file of files) {

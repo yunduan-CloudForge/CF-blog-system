@@ -1,6 +1,5 @@
-import React, { createContext, useContext, useReducer, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import toast from 'react-hot-toast';
-import { Comment } from '../store/commentStore';
 
 // 回复状态接口
 interface ReplyState {
@@ -193,8 +192,8 @@ export const CommentProvider: React.FC<CommentProviderProps> = ({
         dispatch({ type: 'SET_ERROR', error: '回复失败，请重试' });
         return false;
       }
-    } catch (error: any) {
-      const errorMessage = error?.message || '回复失败，请重试';
+    } catch (error: unknown) {
+      const errorMessage = (error as Error)?.message || '回复失败，请重试';
       dispatch({ type: 'SET_ERROR', error: errorMessage });
       // 显示错误提示
        toast.error(errorMessage);

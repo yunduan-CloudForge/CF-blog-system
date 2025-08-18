@@ -15,7 +15,7 @@ import {
   WifiOff,
   TrendingUp
 } from 'lucide-react';
-import { useAuthStore } from '../store/authStore';
+// import { useAuthStore } from '../store/authStore'; // 暂时未使用
 import { useAdminStore } from '../store/adminStore';
 import { useRealtime } from '../hooks/useRealtime';
 import { toast } from 'sonner';
@@ -24,9 +24,9 @@ import AdminLayout from '../components/AdminLayout';
 // 接口定义已移至adminStore
 
 const AdminDashboard: React.FC = () => {
-  const { user, token } = useAuthStore();
+  // const { user, token } = useAuthStore(); // 暂时未使用
   const { 
-    stats, 
+    // stats, // 暂时未使用
     logs: recentLogs, 
     statsLoading, 
     logsLoading, 
@@ -34,15 +34,15 @@ const AdminDashboard: React.FC = () => {
     fetchLogs 
   } = useAdminStore();
   const {
-    connectionState,
+    // connectionState, // 暂时未使用
     isConnected,
     realtimeStats,
     userActivities,
     lastUpdate,
-    connect,
-    disconnect,
-    refreshStats,
-    formatUptime,
+    // connect,
+    // disconnect,
+    // refreshStats,
+    // formatUptime,
     formatLastUpdate
   } = useRealtime();
   const [isLoading, setIsLoading] = useState(true);
@@ -96,11 +96,11 @@ const AdminDashboard: React.FC = () => {
     return 'text-gray-600 bg-gray-50';
   };
 
-  const getStatusColor = (status: string) => {
-    return status === 'success' 
-      ? 'text-green-600 bg-green-50' 
-      : 'text-red-600 bg-red-50';
-  };
+  // const getStatusColor = (status: string) => {
+  //   return status === 'success' 
+  //     ? 'text-green-600 bg-green-50' 
+  //     : 'text-red-600 bg-red-50';
+  // };
 
   if (isLoading || statsLoading) {
     return (

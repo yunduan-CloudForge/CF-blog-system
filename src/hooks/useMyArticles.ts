@@ -263,7 +263,7 @@ export const useBatchArticleOperations = () => {
             summary: article.summary || article.excerpt,
             status: status,
             category_id: article.category_id,
-            tag_ids: article.tags ? article.tags.map((tag: any) => tag.id) : []
+            tag_ids: article.tags ? article.tags.map((tag: { id: number; name: string }) => tag.id) : []
           })
         });
       });

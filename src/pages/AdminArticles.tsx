@@ -11,13 +11,11 @@ import {
   Edit,
   Trash2,
   Eye,
-  Filter,
   Calendar,
   User,
-  ChevronDown,
   FileText
 } from 'lucide-react';
-import { useAdminStore } from '@/store/adminStore';
+// import { useAdminStore } from '../store/adminStore'; // 暂时未使用
 import { authAPI } from '@/store/authStore';
 import { toast } from 'sonner';
 import AdminNavigation from '@/components/AdminNavigation';
@@ -148,7 +146,9 @@ export default function AdminArticles() {
           summary: article.summary || article.excerpt,
           status: status,
           category_id: article.category_id,
-          tag_ids: article.tags ? article.tags.map((tag: any) => tag.id) : []
+          tag_ids: article.tags ? article.tags.map((tag: { id: number; name: string; color?: string } | string) => 
+            typeof tag === 'string' ? tag : tag.id
+          ) : []
         })
       });
 
@@ -168,19 +168,19 @@ export default function AdminArticles() {
     fetchArticles();
   }, [currentPage, searchTerm, statusFilter, fetchArticles]);
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      draft: { label: '草稿', className: 'bg-gray-100 text-gray-800' },
-      published: { label: '已发布', className: 'bg-green-100 text-green-800' },
-      archived: { label: '已归档', className: 'bg-yellow-100 text-yellow-800' }
-    };
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
-    return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${config.className}`}>
-        {config.label}
-      </span>
-    );
-  };
+  // const getStatusBadge = (status: string) => {
+  //   const statusConfig = {
+  //     draft: { label: '草稿', className: 'bg-gray-100 text-gray-800' },
+  //     published: { label: '已发布', className: 'bg-green-100 text-green-800' },
+  //     archived: { label: '已归档', className: 'bg-yellow-100 text-yellow-800' }
+  //   };
+  //   const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
+  //   return (
+  //     <span className={`px-2 py-1 text-xs font-medium rounded-full ${config.className}`}>
+  //       {config.label}
+  //     </span>
+  //   );
+  // };
 
   return (
     <div className="flex h-screen bg-gray-50">

@@ -18,7 +18,7 @@ import {
 interface BarData {
   name: string;
   value: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface BarChartProps {
@@ -31,9 +31,9 @@ interface BarChartProps {
   dataKey?: string;
   nameKey?: string;
   layout?: 'horizontal' | 'vertical';
-  formatTooltip?: (value: any, name: string) => [any, string];
-  formatXAxisLabel?: (value: any) => string;
-  formatYAxisLabel?: (value: any) => string;
+  formatTooltip?: (value: unknown, name: string) => [React.ReactNode, string];
+  formatXAxisLabel?: (value: unknown) => string;
+  formatYAxisLabel?: (value: unknown) => string;
 }
 
 const BarChart: React.FC<BarChartProps> = ({
@@ -50,8 +50,8 @@ const BarChart: React.FC<BarChartProps> = ({
   formatXAxisLabel,
   formatYAxisLabel
 }) => {
-  const defaultFormatTooltip = (value: any, name: string) => {
-    return [value, title || name];
+  const defaultFormatTooltip = (value: unknown, name: string) => {
+    return [String(value), title || name];
   };
 
   return (

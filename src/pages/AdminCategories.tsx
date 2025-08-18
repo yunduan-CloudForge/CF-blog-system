@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { 
   Search, 
   Plus, 
@@ -32,7 +31,6 @@ export default function AdminCategories() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -55,7 +53,6 @@ export default function AdminCategories() {
       const data = await response.json();
       if (data.success) {
         setCategories(data.data);
-        setTotalPages(Math.ceil(data.data.length / itemsPerPage));
       }
     } catch (error) {
       console.error('获取分类列表失败:', error);
@@ -126,9 +123,9 @@ export default function AdminCategories() {
         resetForm();
         fetchCategories();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('创建分类失败:', error);
-      const message = error.response?.data?.message || '创建分类失败';
+      const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || '创建分类失败';
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -156,9 +153,9 @@ export default function AdminCategories() {
         resetForm();
         fetchCategories();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('更新分类失败:', error);
-      const message = error.response?.data?.message || '更新分类失败';
+      const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || '更新分类失败';
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -179,9 +176,9 @@ export default function AdminCategories() {
         setCategoryToDelete(null);
         fetchCategories();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('删除分类失败:', error);
-      const message = error.response?.data?.message || '删除分类失败';
+      const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || '删除分类失败';
       toast.error(message);
     }
   };

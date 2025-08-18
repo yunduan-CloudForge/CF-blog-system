@@ -38,7 +38,7 @@ interface PerformanceMetrics {
   url: string;
   userId?: string;
   sessionId: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }
 
 /**
@@ -278,7 +278,7 @@ router.get('/performance/stats', authMiddleware, async (req: Request, res: Respo
 router.get('/errors/:id', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const user = (req as any).user;
+    const user = req.user;
 
     // 检查管理员权限
     if (user.role !== 'admin') {

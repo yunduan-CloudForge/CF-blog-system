@@ -5,7 +5,7 @@
 
 import { WebSocketServer, WebSocket } from 'ws';
 import { Server } from 'http';
-import { authMiddleware } from '../middleware/auth.js';
+// import { authMiddleware } from '../middleware/auth'; // 暂时注释，未来可能需要
 import jwt from 'jsonwebtoken';
 
 interface AuthenticatedWebSocket extends WebSocket {

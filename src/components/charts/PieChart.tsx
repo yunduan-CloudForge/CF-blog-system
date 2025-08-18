@@ -17,7 +17,7 @@ interface PieData {
   name: string;
   value: number;
   count?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface PieChartProps {
@@ -32,7 +32,7 @@ interface PieChartProps {
   innerRadius?: number;
   outerRadius?: number;
   formatLabel?: (entry: any) => string;
-  formatTooltip?: (value: any, name: string) => [any, string];
+  formatTooltip?: (value: unknown, name: string) => [React.ReactNode, string];
 }
 
 const defaultColors = [
@@ -63,13 +63,13 @@ const PieChart: React.FC<PieChartProps> = ({
   formatTooltip
 }) => {
   const defaultFormatLabel = (entry: any) => {
-    const total = data.reduce((sum, item) => sum + (item[dataKey] || 0), 0);
-    const percent = total > 0 ? ((entry[dataKey] / total) * 100).toFixed(0) : 0;
+    const total = data.reduce((sum, item) => sum + (Number(item[dataKey]) || 0), 0);
+    const percent = total > 0 ? ((Number(entry[dataKey]) / total) * 100).toFixed(0) : 0;
     return `${entry[nameKey]} ${percent}%`;
   };
 
-  const defaultFormatTooltip = (value: any, name: string) => {
-    return [value, name];
+  const defaultFormatTooltip = (value: unknown, name: string) => {
+    return [String(value), name];
   };
 
   // 处理数据，确保有正确的数据结构
@@ -90,7 +90,7 @@ const PieChart: React.FC<PieChartProps> = ({
             cx="50%"
             cy="50%"
             labelLine={false}
-            label={showLabels ? (formatLabel || defaultFormatLabel) : false}
+            label={showLabels ? (formatLabel || defaultFormatLabel) : undefined}
             outerRadius={outerRadius}
             innerRadius={innerRadius}
             fill="#8884d8"

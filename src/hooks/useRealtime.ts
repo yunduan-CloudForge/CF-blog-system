@@ -41,7 +41,7 @@ let globalConnectionState: ConnectionState = { status: 'DISCONNECTED' };
 let globalRealtimeStats: RealtimeStats | null = null;
 let globalUserActivities: UserActivity[] = [];
 let globalLastUpdate: number = 0;
-let globalListeners: Set<() => void> = new Set();
+const globalListeners: Set<() => void> = new Set();
 let isGlobalConnected = false;
 let globalConnectionPromise: Promise<void> | null = null;
 let globalUnsubscribeFunctions: (() => void)[] = [];

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Heart, MessageCircle, MoreHorizontal, Reply, Trash2, Edit3, Flag, ChevronDown, ChevronUp, User } from 'lucide-react';
+import { Heart, MoreHorizontal, Reply, Trash2, Edit3, Flag, ChevronDown, ChevronUp } from 'lucide-react';
 import { Comment } from '../store/commentStore';
 import { useAuthStore } from '../store/authStore';
 import { useCommentContext } from '../contexts/CommentContext';
@@ -23,9 +23,9 @@ const CommentItem: React.FC<CommentItemProps> = ({
   comment,
   depth = 0,
   isCollapsed = false,
-  isExpanded = false,
+  // isExpanded: _isExpanded = false, // 暂时未使用
   onToggleCollapse,
-  onToggleExpansion,
+  // onToggleExpansion: _onToggleExpansion, // 暂时未使用
   className = '',
   showActions = true
 }) => {
@@ -37,14 +37,14 @@ const CommentItem: React.FC<CommentItemProps> = ({
     replyState,
     startReply,
     cancelReply,
-    setReplyContent,
+    // setReplyContent, // 暂时未使用
     submitReply,
     clearError,
-    resetForm,
+    // resetForm, // 暂时未使用
     onLike,
     onDelete,
-    onEdit,
-    maxDepth
+    onEdit
+    // maxDepth // 暂时未使用
   } = useCommentContext();
   
   const [isLiking, setIsLiking] = useState(false);
@@ -179,17 +179,17 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const canEdit = isAuthor;
   
   // 计算缩进样式 - 使用固定的Tailwind类名
-  const getIndentClass = (depth: number) => {
-    switch (depth) {
-      case 0: return '';
-      case 1: return 'ml-4';
-      case 2: return 'ml-8';
-      case 3: return 'ml-12';
-      default: return 'ml-16';
-    }
-  };
+  // const getIndentClass = (depth: number) => {
+  //   switch (depth) {
+  //     case 0: return '';
+  //     case 1: return 'ml-4';
+  //     case 2: return 'ml-8';
+  //     case 3: return 'ml-12';
+  //     default: return 'ml-16';
+  //   }
+  // };
   
-  const indentClass = getIndentClass(depth);
+  // const indentClass = getIndentClass(depth); // 暂时未使用
   
   // 获取时间信息
   const getTimeInfo = (dateString: string) => {

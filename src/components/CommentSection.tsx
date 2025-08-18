@@ -61,7 +61,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     pagination
   } = useCommentStore();
   
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated } = useAuthStore(); // user 暂时未使用
   
   // 本地状态
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);

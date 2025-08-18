@@ -43,6 +43,26 @@ interface QueryPerformance {
   ipAddress?: string;
 }
 
+interface CacheOptions {
+  cacheKey?: string;
+  ttl?: number;
+  queryType?: string;
+  userId?: number;
+  ipAddress?: string;
+}
+
+interface ArticleListOptions {
+  page?: number;
+  limit?: number;
+  search?: string;
+  category?: string;
+  tag?: string;
+  status?: string;
+  author?: string;
+  userId?: number;
+  ipAddress?: string;
+}
+
 // 查询缓存实例
 const queryCache: QueryCache = {};
 
@@ -72,15 +92,9 @@ export class QueryOptimizer {
    */
   async cachedQuery(
     sql: string,
-    params: any[] = [],
-    options: {
-      cacheKey?: string;
-      ttl?: number;
-      queryType?: string;
-      userId?: number;
-      ipAddress?: string;
-    } = {}
-  ): Promise<any> {
+    params: unknown[] = [],
+    options: CacheOptions = {}
+  ): Promise<unknown> {
     const {
       cacheKey = this.generateCacheKey(sql, params),
       ttl = DEFAULT_CACHE_TTL,
@@ -140,15 +154,9 @@ export class QueryOptimizer {
    */
   async cachedGet(
     sql: string,
-    params: any[] = [],
-    options: {
-      cacheKey?: string;
-      ttl?: number;
-      queryType?: string;
-      userId?: number;
-      ipAddress?: string;
-    } = {}
-  ): Promise<any> {
+    params: unknown[] = [],
+    options: CacheOptions = {}
+  ): Promise<unknown> {
     const {
       cacheKey = this.generateCacheKey(sql, params),
       ttl = DEFAULT_CACHE_TTL,
@@ -206,17 +214,7 @@ export class QueryOptimizer {
   /**
    * 优化的文章列表查询
    */
-  async getOptimizedArticleList(options: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    category?: string;
-    tag?: string;
-    status?: string;
-    author?: string;
-    userId?: number;
-    ipAddress?: string;
-  } = {}): Promise<{ articles: any[]; total: number }> {
+  async getOptimizedArticleList(options: ArticleListOptions = {}): Promise<{ articles: Article[]; total: number }> {
     const {
       page = 1,
       limit = 10,
@@ -233,8 +231,8 @@ export class QueryOptimizer {
     const cacheKey = `articles_list_${JSON.stringify(options)}`;
 
     // 构建优化的查询
-    let whereConditions = [];
-    let queryParams = [];
+    const whereConditions: string[] = [];
+        const queryParams: unknown[] = [];
 
     // 使用索引优化的状态查询
     if (status && status !== 'all') {
@@ -252,14 +250,14 @@ export class QueryOptimizer {
           { queryType: 'fts_search', userId, ipAddress }
         );
         
-        if (ftsResult.length > 0) {
-          const ids = ftsResult.map((r: any) => r.rowid).join(',');
+        if (Array.isArray(ftsResult) && ftsResult.length > 0) {
+          const ids = (ftsResult as any[]).map((r: { rowid: number }) => r.rowid).join(',');
           whereConditions.push(`a.id IN (${ids})`);
         } else {
           // 如果FTS没有结果，返回空
           return { articles: [], total: 0 };
         }
-      } catch (error) {
+      } catch {
         // FTS不可用，使用传统LIKE搜索
         whereConditions.push('(a.title LIKE ? OR a.summary LIKE ?)');
         const searchTerm = `%${search}%`;
@@ -329,7 +327,7 @@ export class QueryOptimizer {
     );
 
     // 批量获取标签（优化N+1查询）
-    if (articles.length > 0) {
+    if (Array.isArray(articles) && articles.length > 0) {
       const articleIds = (articles as Article[]).map((a) => a.id).join(',');
       const tagsQuery = `
         SELECT 
@@ -394,15 +392,15 @@ export class QueryOptimizer {
       }
     );
 
-    const total = countResult?.total || 0;
+    const total = (countResult as any)?.total || 0;
 
-    return { articles, total };
+    return { articles: articles as Article[], total };
   }
 
   /**
    * 生成缓存键
    */
-  private generateCacheKey(sql: string, params: any[]): string {
+  private generateCacheKey(sql: string, params: unknown[]): string {
     const hash = this.simpleHash(sql + JSON.stringify(params));
     return `query_${hash}`;
   }
@@ -423,7 +421,7 @@ export class QueryOptimizer {
   /**
    * 从缓存获取数据
    */
-  private getFromCache(key: string): any | null {
+  private getFromCache(key: string): unknown | null {
     const cached = queryCache[key];
     if (!cached) return null;
 
@@ -438,7 +436,7 @@ export class QueryOptimizer {
   /**
    * 设置缓存
    */
-  private setCache(key: string, data: any, ttl: number): void {
+  private setCache(key: string, data: unknown, ttl: number): void {
     queryCache[key] = {
       data,
       timestamp: Date.now(),
@@ -578,11 +576,11 @@ export class QueryOptimizer {
 export const queryOptimizer = QueryOptimizer.getInstance();
 
 // 导出便捷函数
-export const cachedQuery = (sql: string, params?: any[], options?: any) => 
+export const cachedQuery = (sql: string, params?: unknown[], options?: CacheOptions) => 
   queryOptimizer.cachedQuery(sql, params, options);
 
-export const cachedGet = (sql: string, params?: any[], options?: any) => 
+export const cachedGet = (sql: string, params?: unknown[], options?: CacheOptions) => 
   queryOptimizer.cachedGet(sql, params, options);
 
-export const getOptimizedArticleList = (options?: any) => 
+export const getOptimizedArticleList = (options?: ArticleListOptions) => 
   queryOptimizer.getOptimizedArticleList(options);

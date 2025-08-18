@@ -7,8 +7,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Activity,
   Search,
-  Filter,
-  Calendar,
   User,
   FileText,
   Shield,
@@ -24,19 +22,19 @@ import { authAPI } from '@/store/authStore';
 import { toast } from 'sonner';
 import AdminNavigation from '@/components/AdminNavigation';
 
-interface AdminLog {
-  id: number;
-  user_id: number;
-  user_email: string;
-  action: string;
-  resource: string;
-  resource_id: number | null;
-  details: string;
-  ip_address: string;
-  user_agent: string;
-  status: 'success' | 'failed' | 'pending';
-  created_at: string;
-}
+// interface AdminLog { // 暂时未使用
+//   id: number;
+//   user_id: number;
+//   user_email: string;
+//   action: string;
+//   resource: string;
+//   resource_id: number | null;
+//   details: string;
+//   ip_address: string;
+//   user_agent: string;
+//   status: 'success' | 'failed' | 'pending';
+//   created_at: string;
+// }
 
 export default function AdminLogs() {
   const { logs, fetchLogs } = useAdminStore();
@@ -47,7 +45,7 @@ export default function AdminLogs() {
   const [dateRange, setDateRange] = useState<string>('7');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [selectedLogs, setSelectedLogs] = useState<number[]>([]);
+  // const [selectedLogs, setSelectedLogs] = useState<number[]>([]); // 暂时未使用
   const [showDetails, setShowDetails] = useState<number | null>(null);
 
   // 获取日志列表

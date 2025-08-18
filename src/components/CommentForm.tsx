@@ -19,7 +19,7 @@ interface CommentFormProps {
 
 // 评论表单组件
 const CommentForm: React.FC<CommentFormProps> = ({
-  articleId,
+  // articleId: _articleId, // 暂时未使用
   parentId,
   placeholder = '写下你的评论...',
   initialContent = '',
@@ -125,8 +125,8 @@ const CommentForm: React.FC<CommentFormProps> = ({
           onCancel();
         }
       }
-    } catch (error: any) {
-      setError(error.message || '提交失败，请重试');
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : '提交失败，请重试');
     } finally {
       setIsSubmitting(false);
     }

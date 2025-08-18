@@ -5,7 +5,6 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Shield,
   Users,
   Key,
   Plus,
@@ -13,8 +12,7 @@ import {
   Trash2,
   Search,
   Check,
-  X,
-  Settings
+  X
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authAPI } from '@/store/authStore';
@@ -222,7 +220,7 @@ export default function AdminPermissions() {
       setLoading(false);
     };
     loadData();
-  }, [fetchPermissions, fetchRolePermissions]);
+  }, []);
 
   const filteredPermissions = permissions.filter(permission =>
     permission.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

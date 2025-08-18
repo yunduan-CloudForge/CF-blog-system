@@ -19,7 +19,7 @@ import {
 interface TrendData {
   date: string;
   count: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface TrendChartProps {
@@ -31,7 +31,7 @@ interface TrendChartProps {
   height?: number;
   showGrid?: boolean;
   formatDate?: (date: string) => string;
-  formatTooltip?: (value: any, name: string) => [any, string];
+  formatTooltip?: (value: unknown, name: string) => [React.ReactNode, string];
 }
 
 const TrendChart: React.FC<TrendChartProps> = ({
@@ -52,8 +52,8 @@ const TrendChart: React.FC<TrendChartProps> = ({
     });
   };
 
-  const defaultFormatTooltip = (value: any, name: string) => {
-    return [value, title || name];
+  const defaultFormatTooltip = (value: unknown, name: string) => {
+    return [String(value), title || name];
   };
 
   const Chart = type === 'area' ? AreaChart : LineChart;

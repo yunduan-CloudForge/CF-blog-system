@@ -9,8 +9,16 @@ import { query, run, get } from '../database/connection';
 
 const router = Router();
 
+// 文章接口定义
+interface Article {
+  id: number;
+  author_id: number;
+  title: string;
+  content: string;
+}
+
 // 接口响应类型定义
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;
   data?: T;
@@ -94,7 +102,7 @@ function validateCommentContent(content: string): { valid: boolean; error?: stri
 /**
  * 检查评论删除权限
  */
-function canDeleteComment(user: any, comment: Comment, article: any): boolean {
+function canDeleteComment(user: { role: string; userId: number }, comment: Comment, article: Article): boolean {
   // 管理员可以删除任何评论
   if (user.role === 'admin') {
     return true;
@@ -552,7 +560,7 @@ router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
     }
 
     // 检查删除权限
-    if (!canDeleteComment(user, comment as any, article as any)) {
+    if (!canDeleteComment(user, comment as unknown as Comment, article as unknown as Article)) {
       return res.status(403).json(createResponse(false, '无权删除此评论', null, {
         code: 'COMMENT_DELETE_FORBIDDEN',
         details: '只有评论作者、文章作者或管理员可以删除评论'

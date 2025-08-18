@@ -96,7 +96,7 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
  */
 router.post('/', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
-    const userRole = (req as any).user.role;
+    const userRole = req.user?.role;
     const { name, description } = req.body;
 
     // 检查权限
@@ -160,7 +160,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response): Promise<vo
 router.put('/:id', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const userRole = (req as any).user.role;
+    const userRole = req.user?.role;
     const { name, description } = req.body;
 
     // 检查权限
@@ -234,7 +234,7 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response): Promise<
 router.delete('/:id', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const userRole = (req as any).user.role;
+    const userRole = req.user?.role;
 
     // 检查权限
     if (userRole !== 'admin') {

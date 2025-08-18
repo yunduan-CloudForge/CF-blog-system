@@ -26,7 +26,7 @@ const CommentActions: React.FC<CommentActionsProps> = ({
   onEdit,
   onDelete,
   onReport,
-  onShare,
+  // onShare: _onShare, // 暂时未实现分享功能
   className = '',
   size = 'md',
   showLabels = true,

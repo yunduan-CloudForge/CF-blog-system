@@ -11,6 +11,19 @@ import { authMiddleware } from '../middleware/auth';
 import { logDetailedAction, logSecurityAction } from '../middleware/logger';
 import { fileURLToPath } from 'url';
 
+// 用户数据库记录接口
+interface UserRecord {
+  id: number;
+  email: string;
+  username: string;
+  avatar?: string;
+  bio?: string;
+  role: string;
+  password_hash: string;
+  created_at: string;
+  updated_at: string;
+}
+
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,7 +34,7 @@ const dbPath = path.join(__dirname, '../../blog.db');
  * GET /api/profile
  */
 router.get('/', authMiddleware, (req, res) => {
-  const userId = (req as any).user.userId;
+  const userId = req.user?.userId;
   const db = new sqlite3.Database(dbPath);
   
   const query = `
@@ -30,7 +43,7 @@ router.get('/', authMiddleware, (req, res) => {
     WHERE id = ?
   `;
   
-  db.get(query, [userId], (err, row: any) => {
+  db.get(query, [userId], (err, row: UserRecord) => {
     db.close();
     if (err) {
       return res.status(500).json({ 
@@ -72,7 +85,7 @@ router.put('/',
   authMiddleware,
   logDetailedAction('update_profile', 'users'),
   (req, res) => {
-    const userId = (req as any).user.userId;
+    const userId = req.user?.userId;
     const { username, bio, avatar } = req.body;
     
     if (!username) {
@@ -142,7 +155,7 @@ router.put('/password',
   authMiddleware,
   logSecurityAction('change_password', 'users'),
   async (req, res) => {
-    const userId = (req as any).user.userId;
+    const userId = req.user?.userId;
     const { currentPassword, newPassword } = req.body;
     
     if (!currentPassword || !newPassword) {
@@ -163,7 +176,7 @@ router.put('/password',
     
     // 获取当前用户的密码哈希
     const getUserQuery = 'SELECT password_hash FROM users WHERE id = ?';
-    db.get(getUserQuery, [userId], async (err, user: any) => {
+    db.get(getUserQuery, [userId], async (err, user: UserRecord) => {
       if (err) {
         db.close();
         return res.status(500).json({ 
@@ -215,7 +228,7 @@ router.put('/password',
             message: '密码修改成功' 
           });
         });
-      } catch (error) {
+      } catch {
         db.close();
         res.status(500).json({ 
           success: false,
@@ -234,7 +247,7 @@ router.put('/avatar',
   authMiddleware,
   logDetailedAction('update_avatar', 'users'),
   (req, res) => {
-    const userId = (req as any).user.userId;
+    const userId = req.user?.userId;
     const { avatar } = req.body;
     
     if (!avatar) {

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronUp, MessageCircle, Loader2 } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+import { ChevronDown, MessageCircle, Loader2 } from 'lucide-react';
 import { Comment } from '../store/commentStore';
 import CommentItem from './CommentItem';
 

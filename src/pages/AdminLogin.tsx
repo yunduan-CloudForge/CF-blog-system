@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, Shield, AlertCircle, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, Shield, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 

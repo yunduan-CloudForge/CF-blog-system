@@ -235,7 +235,7 @@ export function withErrorBoundary<P extends object>(
 
 // Hook：在函数组件中使用错误边界
 export function useErrorHandler() {
-  return (error: Error, errorInfo?: ErrorInfo) => {
+  return (error: Error) => {
     // 在函数组件中手动触发错误边界
     throw error;
   };
