@@ -39,11 +39,13 @@ RUN if ! getent group nodejs > /dev/null 2>&1; then \
 # 设置工作目录
 WORKDIR /app
 
-# 复制package文件
+# 复制package文件和锁定文件
 COPY package*.json ./
 
-# 只安装生产依赖
-RUN npm ci --only=production && npm cache clean --force
+# 安装生产依赖（删除锁定文件以确保overrides配置生效）
+RUN rm -f package-lock.json && \
+    npm install --omit=dev && \
+    npm cache clean --force
 
 # 复制构建产物
 COPY --from=builder /app/api/dist ./api/dist
