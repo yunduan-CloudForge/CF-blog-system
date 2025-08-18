@@ -4,6 +4,9 @@
 # 构建阶段
 FROM node:20-alpine AS builder
 
+# 安装构建依赖
+RUN apk add --no-cache python3 make g++ libc6-compat
+
 # 设置工作目录
 WORKDIR /app
 
@@ -11,9 +14,12 @@ WORKDIR /app
 COPY package*.json ./
 
 # 安装依赖 - 修复rollup可选依赖问题
-RUN rm -f package-lock.json && \
-    npm install && \
-    npm cache clean --force
+RUN rm -rf package-lock.json node_modules && \
+    npm cache clean --force && \
+    npm config set target_platform linux && \
+    npm config set target_arch x64 && \
+    npm install --legacy-peer-deps --verbose && \
+    npm rebuild --verbose
 
 # 复制源代码
 COPY . .
