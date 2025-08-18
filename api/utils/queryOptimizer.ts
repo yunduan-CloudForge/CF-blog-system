@@ -63,6 +63,14 @@ interface ArticleListOptions {
   ipAddress?: string;
 }
 
+interface FTSResult {
+  rowid: number;
+}
+
+interface CountResult {
+  total: number;
+}
+
 // 查询缓存实例
 const queryCache: QueryCache = {};
 
@@ -251,7 +259,7 @@ export class QueryOptimizer {
         );
         
         if (Array.isArray(ftsResult) && ftsResult.length > 0) {
-          const ids = (ftsResult as any[]).map((r: { rowid: number }) => r.rowid).join(',');
+          const ids = (ftsResult as FTSResult[]).map((r: FTSResult) => r.rowid).join(',');
           whereConditions.push(`a.id IN (${ids})`);
         } else {
           // 如果FTS没有结果，返回空
@@ -392,7 +400,7 @@ export class QueryOptimizer {
       }
     );
 
-    const total = (countResult as any)?.total || 0;
+    const total = (countResult as CountResult)?.total || 0;
 
     return { articles: articles as Article[], total };
   }

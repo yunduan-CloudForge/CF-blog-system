@@ -10,7 +10,8 @@ import {
   Cell,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
+  PieLabelRenderProps
 } from 'recharts';
 
 interface PieData {
@@ -31,7 +32,7 @@ interface PieChartProps {
   nameKey?: string;
   innerRadius?: number;
   outerRadius?: number;
-  formatLabel?: (entry: any) => string;
+  formatLabel?: (props: PieLabelRenderProps) => string;
   formatTooltip?: (value: unknown, name: string) => [React.ReactNode, string];
 }
 
@@ -62,10 +63,11 @@ const PieChart: React.FC<PieChartProps> = ({
   formatLabel,
   formatTooltip
 }) => {
-  const defaultFormatLabel = (entry: any) => {
+  const defaultFormatLabel = (props: PieLabelRenderProps) => {
     const total = data.reduce((sum, item) => sum + (Number(item[dataKey]) || 0), 0);
-    const percent = total > 0 ? ((Number(entry[dataKey]) / total) * 100).toFixed(0) : 0;
-    return `${entry[nameKey]} ${percent}%`;
+    const percent = total > 0 ? ((Number(props.value) / total) * 100).toFixed(0) : 0;
+    const name = props.name || props[nameKey] || '';
+    return `${name} ${percent}%`;
   };
 
   const defaultFormatTooltip = (value: unknown, name: string) => {

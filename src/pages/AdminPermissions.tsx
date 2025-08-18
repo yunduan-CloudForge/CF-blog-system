@@ -45,7 +45,7 @@ export default function AdminPermissions() {
   const [activeTab, setActiveTab] = useState<'permissions' | 'roles'>('permissions');
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [rolePermissions, setRolePermissions] = useState<RolePermission[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -82,7 +82,7 @@ export default function AdminPermissions() {
 
       if (response.ok) {
         const data = await response.json();
-        setRolePermissions(data.data || []);
+        // Role permissions are now managed through the roles data structure
         
         // 组织角色数据
         const roleMap = new Map<string, Role>();
