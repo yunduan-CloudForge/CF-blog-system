@@ -42,8 +42,8 @@ WORKDIR /app
 # 复制package文件
 COPY package*.json ./
 
-# 只安装生产依赖
-RUN npm ci --only=production && npm cache clean --force
+# 安装生产依赖（使用--omit=dev以确保overrides生效）
+RUN npm ci --omit=dev && npm cache clean --force
 
 # 复制构建产物
 COPY --from=builder /app/api/dist ./api/dist
