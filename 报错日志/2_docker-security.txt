@@ -1,0 +1,308 @@
+﻿2025-08-18T01:16:14.0077999Z Current runner version: '2.327.1'
+2025-08-18T01:16:14.0110796Z ##[group]Runner Image Provisioner
+2025-08-18T01:16:14.0111934Z Hosted Compute Agent
+2025-08-18T01:16:14.0112755Z Version: 20250812.370
+2025-08-18T01:16:14.0113704Z Commit: 4a2b2bf7520004e3e907c2150c8cabe342a3da32
+2025-08-18T01:16:14.0114801Z Build Date: 2025-08-12T16:08:14Z
+2025-08-18T01:16:14.0115845Z ##[endgroup]
+2025-08-18T01:16:14.0116885Z ##[group]Operating System
+2025-08-18T01:16:14.0117772Z Ubuntu
+2025-08-18T01:16:14.0118634Z 24.04.2
+2025-08-18T01:16:14.0119619Z LTS
+2025-08-18T01:16:14.0120429Z ##[endgroup]
+2025-08-18T01:16:14.0121227Z ##[group]Runner Image
+2025-08-18T01:16:14.0122314Z Image: ubuntu-24.04
+2025-08-18T01:16:14.0123107Z Version: 20250810.1.0
+2025-08-18T01:16:14.0124697Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20250810.1/images/ubuntu/Ubuntu2404-Readme.md
+2025-08-18T01:16:14.0127494Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20250810.1
+2025-08-18T01:16:14.0129615Z ##[endgroup]
+2025-08-18T01:16:14.0131468Z ##[group]GITHUB_TOKEN Permissions
+2025-08-18T01:16:14.0134157Z Contents: read
+2025-08-18T01:16:14.0135182Z Metadata: read
+2025-08-18T01:16:14.0136113Z Packages: read
+2025-08-18T01:16:14.0136917Z ##[endgroup]
+2025-08-18T01:16:14.0140118Z Secret source: Actions
+2025-08-18T01:16:14.0141429Z Prepare workflow directory
+2025-08-18T01:16:14.0512993Z Prepare all required actions
+2025-08-18T01:16:14.0569189Z Getting action download info
+2025-08-18T01:16:14.3666221Z Download action repository 'actions/checkout@v4' (SHA:08eba0b27e820071cde6df949e0beb9ba4906955)
+2025-08-18T01:16:14.9823430Z Download action repository 'aquasecurity/trivy-action@master' (SHA:77137e9dc3ab1b329b7c8a38c2eb7475850a14e8)
+2025-08-18T01:16:15.5132562Z Getting action download info
+2025-08-18T01:16:15.6496566Z Download action repository 'aquasecurity/setup-trivy@ff1b8b060f23b650436d419b5e13f67f5d4c3087' (SHA:ff1b8b060f23b650436d419b5e13f67f5d4c3087)
+2025-08-18T01:16:15.9127756Z Download action repository 'actions/cache@v4' (SHA:0400d5f644dc74513175e3cd8d07132dd4860809)
+2025-08-18T01:16:16.4899808Z Getting action download info
+2025-08-18T01:16:16.6811969Z Getting action download info
+2025-08-18T01:16:16.8836851Z Getting action download info
+2025-08-18T01:16:17.0723765Z Complete job name: docker-security
+2025-08-18T01:16:17.1424195Z ##[group]Run actions/checkout@v4
+2025-08-18T01:16:17.1424810Z with:
+2025-08-18T01:16:17.1425063Z   repository: yunduan-CloudForge/CF-blog-system
+2025-08-18T01:16:17.1425500Z   token: ***
+2025-08-18T01:16:17.1425692Z   ssh-strict: true
+2025-08-18T01:16:17.1425896Z   ssh-user: git
+2025-08-18T01:16:17.1426100Z   persist-credentials: true
+2025-08-18T01:16:17.1426336Z   clean: true
+2025-08-18T01:16:17.1426530Z   sparse-checkout-cone-mode: true
+2025-08-18T01:16:17.1426764Z   fetch-depth: 1
+2025-08-18T01:16:17.1426937Z   fetch-tags: false
+2025-08-18T01:16:17.1427128Z   show-progress: true
+2025-08-18T01:16:17.1427308Z   lfs: false
+2025-08-18T01:16:17.1427478Z   submodules: false
+2025-08-18T01:16:17.1427670Z   set-safe-directory: true
+2025-08-18T01:16:17.1428394Z ##[endgroup]
+2025-08-18T01:16:17.2491980Z Syncing repository: yunduan-CloudForge/CF-blog-system
+2025-08-18T01:16:17.2493274Z ##[group]Getting Git version info
+2025-08-18T01:16:17.2493768Z Working directory is '/home/runner/work/CF-blog-system/CF-blog-system'
+2025-08-18T01:16:17.2494338Z [command]/usr/bin/git version
+2025-08-18T01:16:17.2558009Z git version 2.50.1
+2025-08-18T01:16:17.2584132Z ##[endgroup]
+2025-08-18T01:16:17.2601014Z Temporarily overriding HOME='/home/runner/work/_temp/35316ba9-4483-4b01-9ba8-d2a0878f9648' before making global git config changes
+2025-08-18T01:16:17.2602423Z Adding repository directory to the temporary git global config as a safe directory
+2025-08-18T01:16:17.2614996Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/CF-blog-system/CF-blog-system
+2025-08-18T01:16:17.2651130Z Deleting the contents of '/home/runner/work/CF-blog-system/CF-blog-system'
+2025-08-18T01:16:17.2654856Z ##[group]Initializing the repository
+2025-08-18T01:16:17.2659803Z [command]/usr/bin/git init /home/runner/work/CF-blog-system/CF-blog-system
+2025-08-18T01:16:17.2745851Z hint: Using 'master' as the name for the initial branch. This default branch name
+2025-08-18T01:16:17.2746998Z hint: is subject to change. To configure the initial branch name to use in all
+2025-08-18T01:16:17.2747893Z hint: of your new repositories, which will suppress this warning, call:
+2025-08-18T01:16:17.2748491Z hint:
+2025-08-18T01:16:17.2749419Z hint: 	git config --global init.defaultBranch <name>
+2025-08-18T01:16:17.2749914Z hint:
+2025-08-18T01:16:17.2750406Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2025-08-18T01:16:17.2751226Z hint: 'development'. The just-created branch can be renamed via this command:
+2025-08-18T01:16:17.2751843Z hint:
+2025-08-18T01:16:17.2752092Z hint: 	git branch -m <name>
+2025-08-18T01:16:17.2752309Z hint:
+2025-08-18T01:16:17.2752655Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2025-08-18T01:16:17.2753319Z Initialized empty Git repository in /home/runner/work/CF-blog-system/CF-blog-system/.git/
+2025-08-18T01:16:17.2761927Z [command]/usr/bin/git remote add origin https://github.com/yunduan-CloudForge/CF-blog-system
+2025-08-18T01:16:17.2793635Z ##[endgroup]
+2025-08-18T01:16:17.2794083Z ##[group]Disabling automatic garbage collection
+2025-08-18T01:16:17.2797721Z [command]/usr/bin/git config --local gc.auto 0
+2025-08-18T01:16:17.2825967Z ##[endgroup]
+2025-08-18T01:16:17.2826588Z ##[group]Setting up auth
+2025-08-18T01:16:17.2833799Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-08-18T01:16:17.2863726Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-08-18T01:16:17.3349497Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-08-18T01:16:17.3380016Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-08-18T01:16:17.3603645Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2025-08-18T01:16:17.3639204Z ##[endgroup]
+2025-08-18T01:16:17.3639829Z ##[group]Fetching the repository
+2025-08-18T01:16:17.3648269Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +874f5e66dfe4dcc3392695826d76a51cd222d124:refs/remotes/origin/develop
+2025-08-18T01:16:17.8202944Z From https://github.com/yunduan-CloudForge/CF-blog-system
+2025-08-18T01:16:17.8204426Z  * [new ref]         874f5e66dfe4dcc3392695826d76a51cd222d124 -> origin/develop
+2025-08-18T01:16:17.8230639Z ##[endgroup]
+2025-08-18T01:16:17.8231304Z ##[group]Determining the checkout info
+2025-08-18T01:16:17.8233433Z ##[endgroup]
+2025-08-18T01:16:17.8239750Z [command]/usr/bin/git sparse-checkout disable
+2025-08-18T01:16:17.8281909Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2025-08-18T01:16:17.8310440Z ##[group]Checking out the ref
+2025-08-18T01:16:17.8314593Z [command]/usr/bin/git checkout --progress --force -B develop refs/remotes/origin/develop
+2025-08-18T01:16:17.8511775Z Switched to a new branch 'develop'
+2025-08-18T01:16:17.8514180Z branch 'develop' set up to track 'origin/develop'.
+2025-08-18T01:16:17.8521452Z ##[endgroup]
+2025-08-18T01:16:17.8560844Z [command]/usr/bin/git log -1 --format=%H
+2025-08-18T01:16:17.8583145Z 874f5e66dfe4dcc3392695826d76a51cd222d124
+2025-08-18T01:16:17.8763012Z ##[group]Run docker build -t blog-frontend:scan -f Dockerfile.frontend .
+2025-08-18T01:16:17.8763577Z [36;1mdocker build -t blog-frontend:scan -f Dockerfile.frontend .[0m
+2025-08-18T01:16:17.8764026Z [36;1mdocker build -t blog-backend:scan -f Dockerfile.backend .[0m
+2025-08-18T01:16:17.8839147Z shell: /usr/bin/bash -e {0}
+2025-08-18T01:16:17.8839419Z ##[endgroup]
+2025-08-18T01:16:18.4490611Z #0 building with "default" instance using docker driver
+2025-08-18T01:16:18.4491143Z 
+2025-08-18T01:16:18.4491349Z #1 [internal] load build definition from Dockerfile.frontend
+2025-08-18T01:16:18.4491877Z #1 transferring dockerfile: 1.47kB done
+2025-08-18T01:16:18.4492316Z #1 DONE 0.0s
+2025-08-18T01:16:18.4492544Z 
+2025-08-18T01:16:18.4492777Z #2 [auth] library/nginx:pull token for registry-1.docker.io
+2025-08-18T01:16:18.5994321Z #2 DONE 0.0s
+2025-08-18T01:16:18.5994614Z 
+2025-08-18T01:16:18.5994994Z #3 [auth] library/node:pull token for registry-1.docker.io
+2025-08-18T01:16:18.5995564Z #3 DONE 0.0s
+2025-08-18T01:16:18.5995713Z 
+2025-08-18T01:16:18.5995949Z #4 [internal] load metadata for docker.io/library/node:20-alpine
+2025-08-18T01:16:18.9933207Z #4 DONE 0.7s
+2025-08-18T01:16:18.9933510Z 
+2025-08-18T01:16:18.9933806Z #5 [internal] load metadata for docker.io/library/nginx:alpine
+2025-08-18T01:16:19.1167688Z #5 DONE 0.7s
+2025-08-18T01:16:19.1167957Z 
+2025-08-18T01:16:19.1168124Z #6 [internal] load .dockerignore
+2025-08-18T01:16:19.1168586Z #6 transferring context: 2B done
+2025-08-18T01:16:19.1169153Z #6 DONE 0.0s
+2025-08-18T01:16:19.1169342Z 
+2025-08-18T01:16:19.1169484Z #7 [internal] load build context
+2025-08-18T01:16:19.1169881Z #7 transferring context: 4.92MB 0.0s done
+2025-08-18T01:16:19.1170289Z #7 DONE 0.0s
+2025-08-18T01:16:19.1170467Z 
+2025-08-18T01:16:19.1171118Z #8 [builder 1/6] FROM docker.io/library/node:20-alpine@sha256:df02558528d3d3d0d621f112e232611aecfee7cbc654f6b375765f72bb262799
+2025-08-18T01:16:19.1172281Z #8 resolve docker.io/library/node:20-alpine@sha256:df02558528d3d3d0d621f112e232611aecfee7cbc654f6b375765f72bb262799 done
+2025-08-18T01:16:19.1173550Z #8 sha256:9824c27679d3b27c5e1cb00a73adb6f4f8d556994111c12db3c5d61a0c843df8 0B / 3.80MB 0.1s
+2025-08-18T01:16:19.1174598Z #8 sha256:8c59d92d6fc9f01af4aaa86824be72b74bd4d940c4c46aa95d9710bfa46c975e 0B / 42.99MB 0.1s
+2025-08-18T01:16:19.1175652Z #8 sha256:54225bd601967a0aa669ec9be621c24d8eeac874b698d55874018070898685c2 0B / 1.26MB 0.1s
+2025-08-18T01:16:19.2180334Z #8 sha256:8c59d92d6fc9f01af4aaa86824be72b74bd4d940c4c46aa95d9710bfa46c975e 6.29MB / 42.99MB 0.2s
+2025-08-18T01:16:19.2181221Z #8 sha256:df02558528d3d3d0d621f112e232611aecfee7cbc654f6b375765f72bb262799 7.67kB / 7.67kB done
+2025-08-18T01:16:19.2181989Z #8 sha256:ae6ee91a652d927de01d550c29f863a52f1da390c89df95f3ceba256d1e62604 1.72kB / 1.72kB done
+2025-08-18T01:16:19.2182637Z #8 sha256:7cdef5a331927fafa250be6166052d8599bf5eb7b014342538c2cc79b70a081f 6.42kB / 6.42kB done
+2025-08-18T01:16:19.3910912Z #8 sha256:9824c27679d3b27c5e1cb00a73adb6f4f8d556994111c12db3c5d61a0c843df8 3.80MB / 3.80MB 0.3s done
+2025-08-18T01:16:19.3913928Z #8 sha256:8c59d92d6fc9f01af4aaa86824be72b74bd4d940c4c46aa95d9710bfa46c975e 13.63MB / 42.99MB 0.3s
+2025-08-18T01:16:19.3915002Z #8 extracting sha256:9824c27679d3b27c5e1cb00a73adb6f4f8d556994111c12db3c5d61a0c843df8 0.1s
+2025-08-18T01:16:19.3915943Z #8 sha256:a9e48ad1219d4d11c6456a8db0fd5c11af46242d52edf84e17ab84a7bfd93809 0B / 445B 0.3s
+2025-08-18T01:16:19.5166683Z #8 sha256:8c59d92d6fc9f01af4aaa86824be72b74bd4d940c4c46aa95d9710bfa46c975e 25.17MB / 42.99MB 0.5s
+2025-08-18T01:16:19.5168127Z #8 sha256:54225bd601967a0aa669ec9be621c24d8eeac874b698d55874018070898685c2 1.26MB / 1.26MB 0.3s done
+2025-08-18T01:16:19.5170249Z #8 extracting sha256:9824c27679d3b27c5e1cb00a73adb6f4f8d556994111c12db3c5d61a0c843df8 0.1s done
+2025-08-18T01:16:19.5172693Z #8 sha256:a9e48ad1219d4d11c6456a8db0fd5c11af46242d52edf84e17ab84a7bfd93809 445B / 445B 0.4s done
+2025-08-18T01:16:19.6173816Z #8 sha256:8c59d92d6fc9f01af4aaa86824be72b74bd4d940c4c46aa95d9710bfa46c975e 37.75MB / 42.99MB 0.6s
+2025-08-18T01:16:19.7186898Z #8 sha256:8c59d92d6fc9f01af4aaa86824be72b74bd4d940c4c46aa95d9710bfa46c975e 42.99MB / 42.99MB 0.7s done
+2025-08-18T01:16:19.8203678Z #8 extracting sha256:8c59d92d6fc9f01af4aaa86824be72b74bd4d940c4c46aa95d9710bfa46c975e 0.1s
+2025-08-18T01:16:20.6427443Z #8 ...
+2025-08-18T01:16:20.6427726Z 
+2025-08-18T01:16:20.6429365Z #9 [production 1/8] FROM docker.io/library/nginx:alpine@sha256:42a516af16b852e33b7682d5ef8acbd5d13fe08fecadc7ed98605ba5e3b26ab8
+2025-08-18T01:16:20.6430949Z #9 resolve docker.io/library/nginx:alpine@sha256:42a516af16b852e33b7682d5ef8acbd5d13fe08fecadc7ed98605ba5e3b26ab8 done
+2025-08-18T01:16:20.6432235Z #9 sha256:4a86014ec6994761b7f3118cf47e4b4fd6bac15fc6fa262c4f356386bbc0e9d9 10.78kB / 10.78kB done
+2025-08-18T01:16:20.6433333Z #9 sha256:9824c27679d3b27c5e1cb00a73adb6f4f8d556994111c12db3c5d61a0c843df8 3.80MB / 3.80MB 0.3s done
+2025-08-18T01:16:20.6434401Z #9 sha256:42a516af16b852e33b7682d5ef8acbd5d13fe08fecadc7ed98605ba5e3b26ab8 10.33kB / 10.33kB done
+2025-08-18T01:16:20.6435593Z #9 sha256:60e48a050b6408d0c5dd59b98b6e36bf0937a0bbe99304e3e9c0e63b7563443a 2.50kB / 2.50kB done
+2025-08-18T01:16:20.6436607Z #9 extracting sha256:9824c27679d3b27c5e1cb00a73adb6f4f8d556994111c12db3c5d61a0c843df8 0.1s done
+2025-08-18T01:16:20.6437668Z #9 sha256:6bc572a340ecbc60aca0c624f76b32de0b073d5efa4fa1e0b6d9da6405976946 1.81MB / 1.81MB 0.5s done
+2025-08-18T01:16:20.6438446Z #9 sha256:403e3f251637881bbdc5fb06df8da55c149c00ccb0addbcb7839fa4ad60dfd04 628B / 628B 0.5s done
+2025-08-18T01:16:20.6439320Z #9 extracting sha256:6bc572a340ecbc60aca0c624f76b32de0b073d5efa4fa1e0b6d9da6405976946 0.1s done
+2025-08-18T01:16:20.6440489Z #9 sha256:7a8a46741e18ed98437271669138116163f14596f411c1948fd7836e39f1afea 405B / 405B 0.6s done
+2025-08-18T01:16:20.6441621Z #9 sha256:9adfbae99cb79774fdc14ca03a0a0154b8c199a69f69316bcfce64b07f80719f 955B / 955B 0.6s done
+2025-08-18T01:16:20.6442734Z #9 sha256:cb1ff4086f82493a4b8b02ec71bfed092cad25bd5bf302aec78d4979895350cb 16.84MB / 16.84MB 1.1s done
+2025-08-18T01:16:20.6444069Z #9 sha256:c9ebe2ff2d2cd981811cefb6df49a116da6074c770c07ee86a6ae2ebe7eee926 1.21kB / 1.21kB 0.7s done
+2025-08-18T01:16:20.6445172Z #9 sha256:a992fbc61ecc9d8291c27f9add7b8a07d374c06a435d4734519b634762cf1c51 1.40kB / 1.40kB 0.7s done
+2025-08-18T01:16:20.6446515Z #9 extracting sha256:403e3f251637881bbdc5fb06df8da55c149c00ccb0addbcb7839fa4ad60dfd04 done
+2025-08-18T01:16:20.6447703Z #9 extracting sha256:9adfbae99cb79774fdc14ca03a0a0154b8c199a69f69316bcfce64b07f80719f done
+2025-08-18T01:16:20.6448634Z #9 extracting sha256:7a8a46741e18ed98437271669138116163f14596f411c1948fd7836e39f1afea done
+2025-08-18T01:16:20.6450118Z #9 extracting sha256:c9ebe2ff2d2cd981811cefb6df49a116da6074c770c07ee86a6ae2ebe7eee926 done
+2025-08-18T01:16:20.6451489Z #9 extracting sha256:a992fbc61ecc9d8291c27f9add7b8a07d374c06a435d4734519b634762cf1c51 done
+2025-08-18T01:16:20.6452113Z #9 extracting sha256:cb1ff4086f82493a4b8b02ec71bfed092cad25bd5bf302aec78d4979895350cb 0.4s done
+2025-08-18T01:16:20.6452645Z #9 DONE 1.6s
+2025-08-18T01:16:20.6452837Z 
+2025-08-18T01:16:20.6453455Z #8 [builder 1/6] FROM docker.io/library/node:20-alpine@sha256:df02558528d3d3d0d621f112e232611aecfee7cbc654f6b375765f72bb262799
+2025-08-18T01:16:21.1176907Z #8 extracting sha256:8c59d92d6fc9f01af4aaa86824be72b74bd4d940c4c46aa95d9710bfa46c975e 1.3s done
+2025-08-18T01:16:21.1177958Z #8 extracting sha256:54225bd601967a0aa669ec9be621c24d8eeac874b698d55874018070898685c2
+2025-08-18T01:16:21.3562992Z #8 extracting sha256:54225bd601967a0aa669ec9be621c24d8eeac874b698d55874018070898685c2 0.0s done
+2025-08-18T01:16:21.3565043Z #8 extracting sha256:a9e48ad1219d4d11c6456a8db0fd5c11af46242d52edf84e17ab84a7bfd93809 done
+2025-08-18T01:16:21.3567053Z #8 DONE 2.2s
+2025-08-18T01:16:21.3567248Z 
+2025-08-18T01:16:21.3567394Z #10 [builder 2/6] WORKDIR /app
+2025-08-18T01:16:21.3567760Z #10 DONE 0.0s
+2025-08-18T01:16:21.3567929Z 
+2025-08-18T01:16:21.3568107Z #11 [builder 3/6] COPY package*.json ./
+2025-08-18T01:16:21.3568520Z #11 DONE 0.0s
+2025-08-18T01:16:21.3568684Z 
+2025-08-18T01:16:21.3569440Z #12 [builder 4/6] RUN npm ci && npm cache clean --force
+2025-08-18T01:16:21.5808085Z #12 ...
+2025-08-18T01:16:21.5812778Z 
+2025-08-18T01:16:21.5813653Z #13 [production 2/8] RUN apk add --no-cache curl
+2025-08-18T01:16:21.5814990Z #13 0.164 fetch https://dl-cdn.alpinelinux.org/alpine/v3.22/main/x86_64/APKINDEX.tar.gz
+2025-08-18T01:16:21.5816406Z #13 0.335 fetch https://dl-cdn.alpinelinux.org/alpine/v3.22/community/x86_64/APKINDEX.tar.gz
+2025-08-18T01:16:21.5817166Z #13 0.712 OK: 49 MiB in 70 packages
+2025-08-18T01:16:21.5817574Z #13 DONE 0.8s
+2025-08-18T01:16:21.5934180Z 
+2025-08-18T01:16:21.5935901Z #14 [production 3/8] RUN if ! getent group nginx > /dev/null 2>&1; then         addgroup -g 1001 -S nginx;     fi &&     if ! getent passwd nginx > /dev/null 2>&1; then         adduser -S nginx -u 1001 -G nginx;     fi
+2025-08-18T01:16:21.5937047Z #14 DONE 0.2s
+2025-08-18T01:16:21.5937232Z 
+2025-08-18T01:16:21.5937437Z #12 [builder 4/6] RUN npm ci && npm cache clean --force
+2025-08-18T01:16:24.7626127Z #12 3.554 npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+2025-08-18T01:16:24.9966983Z #12 3.788 npm warn deprecated npmlog@6.0.2: This package is no longer supported.
+2025-08-18T01:16:25.5810071Z #12 4.373 npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+2025-08-18T01:16:25.8447231Z #12 4.636 npm warn deprecated gauge@4.0.4: This package is no longer supported.
+2025-08-18T01:16:26.3455564Z #12 5.137 npm warn deprecated are-we-there-yet@3.0.1: This package is no longer supported.
+2025-08-18T01:16:27.0984908Z #12 5.890 npm warn deprecated @npmcli/move-file@1.1.2: This functionality has been moved to @npmcli/fs
+2025-08-18T01:16:27.7484243Z #12 6.540 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+2025-08-18T01:16:27.9487564Z #12 6.590 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+2025-08-18T01:16:28.0592299Z #12 6.851 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+2025-08-18T01:16:31.9978833Z #12 10.79 
+2025-08-18T01:16:31.9979525Z #12 10.79 added 864 packages, and audited 865 packages in 11s
+2025-08-18T01:16:31.9980085Z #12 10.79 
+2025-08-18T01:16:32.1482649Z #12 10.79 198 packages are looking for funding
+2025-08-18T01:16:32.1483136Z #12 10.79   run `npm fund` for details
+2025-08-18T01:16:32.1483369Z #12 10.79 
+2025-08-18T01:16:32.1483553Z #12 10.79 found 0 vulnerabilities
+2025-08-18T01:16:32.1483778Z #12 10.79 npm notice
+2025-08-18T01:16:32.1484113Z #12 10.79 npm notice New major version of npm available! 10.8.2 -> 11.5.2
+2025-08-18T01:16:32.1484613Z #12 10.79 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.5.2
+2025-08-18T01:16:32.1485203Z #12 10.79 npm notice To update run: npm install -g npm@11.5.2
+2025-08-18T01:16:32.1485519Z #12 10.79 npm notice
+2025-08-18T01:16:32.1485820Z #12 10.94 npm warn using --force Recommended protections disabled.
+2025-08-18T01:16:33.1231177Z #12 DONE 11.9s
+2025-08-18T01:16:33.3139680Z 
+2025-08-18T01:16:33.3140146Z #15 [builder 5/6] COPY . .
+2025-08-18T01:16:33.3140586Z #15 DONE 0.0s
+2025-08-18T01:16:33.3140776Z 
+2025-08-18T01:16:33.3140922Z #16 [builder 6/6] RUN npm run build
+2025-08-18T01:16:33.4166332Z #16 0.253 
+2025-08-18T01:16:33.4166596Z #16 0.253 > blog-system@0.0.0 build
+2025-08-18T01:16:33.4166879Z #16 0.253 > tsc -b && vite build
+2025-08-18T01:16:33.4167098Z #16 0.253 
+2025-08-18T01:16:41.4539338Z #16 8.291 /app/node_modules/rollup/dist/native.js:64
+2025-08-18T01:16:41.4539907Z #16 8.291 		throw new Error(
+2025-08-18T01:16:41.4540232Z #16 8.291 		      ^
+2025-08-18T01:16:41.4540492Z #16 8.291 
+2025-08-18T01:16:41.4542326Z #16 8.291 Error: Cannot find module @rollup/rollup-linux-x64-musl. npm has a bug related to optional dependencies (https://github.com/npm/cli/issues/4828). Please try `npm i` again after removing both package-lock.json and node_modules directory.
+2025-08-18T01:16:41.4544043Z #16 8.291     at requireWithFriendlyError (/app/node_modules/rollup/dist/native.js:64:9)
+2025-08-18T01:16:41.4544873Z #16 8.291     at Object.<anonymous> (/app/node_modules/rollup/dist/native.js:73:76)
+2025-08-18T01:16:41.4545515Z #16 8.291     ... 3 lines matching cause stack trace ...
+2025-08-18T01:16:41.4546321Z #16 8.291     at Module._load (node:internal/modules/cjs/loader:1096:12)
+2025-08-18T01:16:41.4546959Z #16 8.291     at cjsLoader (node:internal/modules/esm/translators:298:15)
+2025-08-18T01:16:41.4547654Z #16 8.291     at ModuleWrap.<anonymous> (node:internal/modules/esm/translators:240:7)
+2025-08-18T01:16:41.4548374Z #16 8.291     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+2025-08-18T01:16:41.4549324Z #16 8.291     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) {
+2025-08-18T01:16:41.4550069Z #16 8.291   [cause]: Error: Cannot find module '@rollup/rollup-linux-x64-musl'
+2025-08-18T01:16:41.4550618Z #16 8.291   Require stack:
+2025-08-18T01:16:41.4551011Z #16 8.291   - /app/node_modules/rollup/dist/native.js
+2025-08-18T01:16:41.4551625Z #16 8.291       at Module._resolveFilename (node:internal/modules/cjs/loader:1212:15)
+2025-08-18T01:16:41.4552313Z #16 8.291       at Module._load (node:internal/modules/cjs/loader:1043:27)
+2025-08-18T01:16:41.4552945Z #16 8.291       at Module.require (node:internal/modules/cjs/loader:1298:19)
+2025-08-18T01:16:41.4553546Z #16 8.291       at require (node:internal/modules/helpers:182:18)
+2025-08-18T01:16:41.4554277Z #16 8.291       at requireWithFriendlyError (/app/node_modules/rollup/dist/native.js:46:10)
+2025-08-18T01:16:41.4555111Z #16 8.291       at Object.<anonymous> (/app/node_modules/rollup/dist/native.js:73:76)
+2025-08-18T01:16:41.4555807Z #16 8.291       at Module._compile (node:internal/modules/cjs/loader:1529:14)
+2025-08-18T01:16:41.4556490Z #16 8.291       at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+2025-08-18T01:16:41.4557168Z #16 8.291       at Module.load (node:internal/modules/cjs/loader:1275:32)
+2025-08-18T01:16:41.4557774Z #16 8.291       at Module._load (node:internal/modules/cjs/loader:1096:12) {
+2025-08-18T01:16:41.4558291Z #16 8.291     code: 'MODULE_NOT_FOUND',
+2025-08-18T01:16:41.4558797Z #16 8.291     requireStack: [ '/app/node_modules/rollup/dist/native.js' ]
+2025-08-18T01:16:41.4559438Z #16 8.291   }
+2025-08-18T01:16:41.4559685Z #16 8.291 }
+2025-08-18T01:16:41.4559941Z #16 8.291 
+2025-08-18T01:16:41.4560125Z #16 8.291 Node.js v20.19.4
+2025-08-18T01:16:41.6362609Z #16 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2025-08-18T01:16:41.6600492Z ------
+2025-08-18T01:16:41.6600893Z  > [builder 6/6] RUN npm run build:
+2025-08-18T01:16:41.6601471Z 8.291       at Module._compile (node:internal/modules/cjs/loader:1529:14)
+2025-08-18T01:16:41.6602183Z 8.291       at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+2025-08-18T01:16:41.6602912Z 8.291       at Module.load (node:internal/modules/cjs/loader:1275:32)
+2025-08-18T01:16:41.6603552Z 8.291       at Module._load (node:internal/modules/cjs/loader:1096:12) {
+2025-08-18T01:16:41.6604050Z 8.291     code: 'MODULE_NOT_FOUND',
+2025-08-18T01:16:41.6604466Z 8.291     requireStack: [ '/app/node_modules/rollup/dist/native.js' ]
+2025-08-18T01:16:41.6605041Z 8.291   }
+2025-08-18T01:16:41.6605325Z 8.291 }
+2025-08-18T01:16:41.6605598Z 8.291 
+2025-08-18T01:16:41.6605900Z 8.291 Node.js v20.19.4
+2025-08-18T01:16:41.6606232Z ------
+2025-08-18T01:16:41.6651998Z Dockerfile.frontend:20
+2025-08-18T01:16:41.6652408Z --------------------
+2025-08-18T01:16:41.6652704Z   18 |     
+2025-08-18T01:16:41.6653235Z   19 |     # 构建应用
+2025-08-18T01:16:41.6653525Z   20 | >>> RUN npm run build
+2025-08-18T01:16:41.6653851Z   21 |     
+2025-08-18T01:16:41.6654150Z   22 |     # 生产阶段
+2025-08-18T01:16:41.6654427Z --------------------
+2025-08-18T01:16:41.6655391Z ERROR: failed to build: failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2025-08-18T01:16:41.6706490Z ##[error]Process completed with exit code 1.
+2025-08-18T01:16:41.6806502Z Post job cleanup.
+2025-08-18T01:16:41.7758738Z [command]/usr/bin/git version
+2025-08-18T01:16:41.7795303Z git version 2.50.1
+2025-08-18T01:16:41.7837569Z Temporarily overriding HOME='/home/runner/work/_temp/0d2b1658-f9df-4649-b54a-d086fd115af1' before making global git config changes
+2025-08-18T01:16:41.7838639Z Adding repository directory to the temporary git global config as a safe directory
+2025-08-18T01:16:41.7843313Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/CF-blog-system/CF-blog-system
+2025-08-18T01:16:41.7882924Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-08-18T01:16:41.7914151Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-08-18T01:16:41.8139896Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-08-18T01:16:41.8159934Z http.https://github.com/.extraheader
+2025-08-18T01:16:41.8172346Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2025-08-18T01:16:41.8201977Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-08-18T01:16:41.8525868Z Cleaning up orphan processes

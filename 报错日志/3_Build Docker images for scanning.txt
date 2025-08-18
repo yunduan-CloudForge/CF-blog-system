@@ -1,0 +1,190 @@
+﻿2025-08-18T01:16:17.8762990Z ##[group]Run docker build -t blog-frontend:scan -f Dockerfile.frontend .
+2025-08-18T01:16:17.8763573Z [36;1mdocker build -t blog-frontend:scan -f Dockerfile.frontend .[0m
+2025-08-18T01:16:17.8764022Z [36;1mdocker build -t blog-backend:scan -f Dockerfile.backend .[0m
+2025-08-18T01:16:17.8839122Z shell: /usr/bin/bash -e {0}
+2025-08-18T01:16:17.8839415Z ##[endgroup]
+2025-08-18T01:16:18.4490562Z #0 building with "default" instance using docker driver
+2025-08-18T01:16:18.4491132Z 
+2025-08-18T01:16:18.4491344Z #1 [internal] load build definition from Dockerfile.frontend
+2025-08-18T01:16:18.4491869Z #1 transferring dockerfile: 1.47kB done
+2025-08-18T01:16:18.4492306Z #1 DONE 0.0s
+2025-08-18T01:16:18.4492537Z 
+2025-08-18T01:16:18.4492773Z #2 [auth] library/nginx:pull token for registry-1.docker.io
+2025-08-18T01:16:18.5994262Z #2 DONE 0.0s
+2025-08-18T01:16:18.5994606Z 
+2025-08-18T01:16:18.5994988Z #3 [auth] library/node:pull token for registry-1.docker.io
+2025-08-18T01:16:18.5995489Z #3 DONE 0.0s
+2025-08-18T01:16:18.5995709Z 
+2025-08-18T01:16:18.5995944Z #4 [internal] load metadata for docker.io/library/node:20-alpine
+2025-08-18T01:16:18.9933138Z #4 DONE 0.7s
+2025-08-18T01:16:18.9933504Z 
+2025-08-18T01:16:18.9933800Z #5 [internal] load metadata for docker.io/library/nginx:alpine
+2025-08-18T01:16:19.1167619Z #5 DONE 0.7s
+2025-08-18T01:16:19.1167951Z 
+2025-08-18T01:16:19.1168117Z #6 [internal] load .dockerignore
+2025-08-18T01:16:19.1168576Z #6 transferring context: 2B done
+2025-08-18T01:16:19.1169142Z #6 DONE 0.0s
+2025-08-18T01:16:19.1169336Z 
+2025-08-18T01:16:19.1169479Z #7 [internal] load build context
+2025-08-18T01:16:19.1169873Z #7 transferring context: 4.92MB 0.0s done
+2025-08-18T01:16:19.1170282Z #7 DONE 0.0s
+2025-08-18T01:16:19.1170461Z 
+2025-08-18T01:16:19.1171107Z #8 [builder 1/6] FROM docker.io/library/node:20-alpine@sha256:df02558528d3d3d0d621f112e232611aecfee7cbc654f6b375765f72bb262799
+2025-08-18T01:16:19.1172242Z #8 resolve docker.io/library/node:20-alpine@sha256:df02558528d3d3d0d621f112e232611aecfee7cbc654f6b375765f72bb262799 done
+2025-08-18T01:16:19.1173533Z #8 sha256:9824c27679d3b27c5e1cb00a73adb6f4f8d556994111c12db3c5d61a0c843df8 0B / 3.80MB 0.1s
+2025-08-18T01:16:19.1174582Z #8 sha256:8c59d92d6fc9f01af4aaa86824be72b74bd4d940c4c46aa95d9710bfa46c975e 0B / 42.99MB 0.1s
+2025-08-18T01:16:19.1175634Z #8 sha256:54225bd601967a0aa669ec9be621c24d8eeac874b698d55874018070898685c2 0B / 1.26MB 0.1s
+2025-08-18T01:16:19.2180263Z #8 sha256:8c59d92d6fc9f01af4aaa86824be72b74bd4d940c4c46aa95d9710bfa46c975e 6.29MB / 42.99MB 0.2s
+2025-08-18T01:16:19.2181214Z #8 sha256:df02558528d3d3d0d621f112e232611aecfee7cbc654f6b375765f72bb262799 7.67kB / 7.67kB done
+2025-08-18T01:16:19.2181984Z #8 sha256:ae6ee91a652d927de01d550c29f863a52f1da390c89df95f3ceba256d1e62604 1.72kB / 1.72kB done
+2025-08-18T01:16:19.2182632Z #8 sha256:7cdef5a331927fafa250be6166052d8599bf5eb7b014342538c2cc79b70a081f 6.42kB / 6.42kB done
+2025-08-18T01:16:19.3910821Z #8 sha256:9824c27679d3b27c5e1cb00a73adb6f4f8d556994111c12db3c5d61a0c843df8 3.80MB / 3.80MB 0.3s done
+2025-08-18T01:16:19.3913912Z #8 sha256:8c59d92d6fc9f01af4aaa86824be72b74bd4d940c4c46aa95d9710bfa46c975e 13.63MB / 42.99MB 0.3s
+2025-08-18T01:16:19.3914991Z #8 extracting sha256:9824c27679d3b27c5e1cb00a73adb6f4f8d556994111c12db3c5d61a0c843df8 0.1s
+2025-08-18T01:16:19.3915933Z #8 sha256:a9e48ad1219d4d11c6456a8db0fd5c11af46242d52edf84e17ab84a7bfd93809 0B / 445B 0.3s
+2025-08-18T01:16:19.5166636Z #8 sha256:8c59d92d6fc9f01af4aaa86824be72b74bd4d940c4c46aa95d9710bfa46c975e 25.17MB / 42.99MB 0.5s
+2025-08-18T01:16:19.5168116Z #8 sha256:54225bd601967a0aa669ec9be621c24d8eeac874b698d55874018070898685c2 1.26MB / 1.26MB 0.3s done
+2025-08-18T01:16:19.5170229Z #8 extracting sha256:9824c27679d3b27c5e1cb00a73adb6f4f8d556994111c12db3c5d61a0c843df8 0.1s done
+2025-08-18T01:16:19.5172677Z #8 sha256:a9e48ad1219d4d11c6456a8db0fd5c11af46242d52edf84e17ab84a7bfd93809 445B / 445B 0.4s done
+2025-08-18T01:16:19.6173183Z #8 sha256:8c59d92d6fc9f01af4aaa86824be72b74bd4d940c4c46aa95d9710bfa46c975e 37.75MB / 42.99MB 0.6s
+2025-08-18T01:16:19.7186839Z #8 sha256:8c59d92d6fc9f01af4aaa86824be72b74bd4d940c4c46aa95d9710bfa46c975e 42.99MB / 42.99MB 0.7s done
+2025-08-18T01:16:19.8203622Z #8 extracting sha256:8c59d92d6fc9f01af4aaa86824be72b74bd4d940c4c46aa95d9710bfa46c975e 0.1s
+2025-08-18T01:16:20.6427381Z #8 ...
+2025-08-18T01:16:20.6427720Z 
+2025-08-18T01:16:20.6429345Z #9 [production 1/8] FROM docker.io/library/nginx:alpine@sha256:42a516af16b852e33b7682d5ef8acbd5d13fe08fecadc7ed98605ba5e3b26ab8
+2025-08-18T01:16:20.6430918Z #9 resolve docker.io/library/nginx:alpine@sha256:42a516af16b852e33b7682d5ef8acbd5d13fe08fecadc7ed98605ba5e3b26ab8 done
+2025-08-18T01:16:20.6432213Z #9 sha256:4a86014ec6994761b7f3118cf47e4b4fd6bac15fc6fa262c4f356386bbc0e9d9 10.78kB / 10.78kB done
+2025-08-18T01:16:20.6433325Z #9 sha256:9824c27679d3b27c5e1cb00a73adb6f4f8d556994111c12db3c5d61a0c843df8 3.80MB / 3.80MB 0.3s done
+2025-08-18T01:16:20.6434396Z #9 sha256:42a516af16b852e33b7682d5ef8acbd5d13fe08fecadc7ed98605ba5e3b26ab8 10.33kB / 10.33kB done
+2025-08-18T01:16:20.6435568Z #9 sha256:60e48a050b6408d0c5dd59b98b6e36bf0937a0bbe99304e3e9c0e63b7563443a 2.50kB / 2.50kB done
+2025-08-18T01:16:20.6436601Z #9 extracting sha256:9824c27679d3b27c5e1cb00a73adb6f4f8d556994111c12db3c5d61a0c843df8 0.1s done
+2025-08-18T01:16:20.6437657Z #9 sha256:6bc572a340ecbc60aca0c624f76b32de0b073d5efa4fa1e0b6d9da6405976946 1.81MB / 1.81MB 0.5s done
+2025-08-18T01:16:20.6438440Z #9 sha256:403e3f251637881bbdc5fb06df8da55c149c00ccb0addbcb7839fa4ad60dfd04 628B / 628B 0.5s done
+2025-08-18T01:16:20.6439310Z #9 extracting sha256:6bc572a340ecbc60aca0c624f76b32de0b073d5efa4fa1e0b6d9da6405976946 0.1s done
+2025-08-18T01:16:20.6440472Z #9 sha256:7a8a46741e18ed98437271669138116163f14596f411c1948fd7836e39f1afea 405B / 405B 0.6s done
+2025-08-18T01:16:20.6441610Z #9 sha256:9adfbae99cb79774fdc14ca03a0a0154b8c199a69f69316bcfce64b07f80719f 955B / 955B 0.6s done
+2025-08-18T01:16:20.6442728Z #9 sha256:cb1ff4086f82493a4b8b02ec71bfed092cad25bd5bf302aec78d4979895350cb 16.84MB / 16.84MB 1.1s done
+2025-08-18T01:16:20.6444052Z #9 sha256:c9ebe2ff2d2cd981811cefb6df49a116da6074c770c07ee86a6ae2ebe7eee926 1.21kB / 1.21kB 0.7s done
+2025-08-18T01:16:20.6445167Z #9 sha256:a992fbc61ecc9d8291c27f9add7b8a07d374c06a435d4734519b634762cf1c51 1.40kB / 1.40kB 0.7s done
+2025-08-18T01:16:20.6446509Z #9 extracting sha256:403e3f251637881bbdc5fb06df8da55c149c00ccb0addbcb7839fa4ad60dfd04 done
+2025-08-18T01:16:20.6447697Z #9 extracting sha256:9adfbae99cb79774fdc14ca03a0a0154b8c199a69f69316bcfce64b07f80719f done
+2025-08-18T01:16:20.6448630Z #9 extracting sha256:7a8a46741e18ed98437271669138116163f14596f411c1948fd7836e39f1afea done
+2025-08-18T01:16:20.6450108Z #9 extracting sha256:c9ebe2ff2d2cd981811cefb6df49a116da6074c770c07ee86a6ae2ebe7eee926 done
+2025-08-18T01:16:20.6451474Z #9 extracting sha256:a992fbc61ecc9d8291c27f9add7b8a07d374c06a435d4734519b634762cf1c51 done
+2025-08-18T01:16:20.6452109Z #9 extracting sha256:cb1ff4086f82493a4b8b02ec71bfed092cad25bd5bf302aec78d4979895350cb 0.4s done
+2025-08-18T01:16:20.6452637Z #9 DONE 1.6s
+2025-08-18T01:16:20.6452820Z 
+2025-08-18T01:16:20.6453445Z #8 [builder 1/6] FROM docker.io/library/node:20-alpine@sha256:df02558528d3d3d0d621f112e232611aecfee7cbc654f6b375765f72bb262799
+2025-08-18T01:16:21.1176860Z #8 extracting sha256:8c59d92d6fc9f01af4aaa86824be72b74bd4d940c4c46aa95d9710bfa46c975e 1.3s done
+2025-08-18T01:16:21.1177942Z #8 extracting sha256:54225bd601967a0aa669ec9be621c24d8eeac874b698d55874018070898685c2
+2025-08-18T01:16:21.3562944Z #8 extracting sha256:54225bd601967a0aa669ec9be621c24d8eeac874b698d55874018070898685c2 0.0s done
+2025-08-18T01:16:21.3565028Z #8 extracting sha256:a9e48ad1219d4d11c6456a8db0fd5c11af46242d52edf84e17ab84a7bfd93809 done
+2025-08-18T01:16:21.3567040Z #8 DONE 2.2s
+2025-08-18T01:16:21.3567242Z 
+2025-08-18T01:16:21.3567391Z #10 [builder 2/6] WORKDIR /app
+2025-08-18T01:16:21.3567756Z #10 DONE 0.0s
+2025-08-18T01:16:21.3567925Z 
+2025-08-18T01:16:21.3568103Z #11 [builder 3/6] COPY package*.json ./
+2025-08-18T01:16:21.3568516Z #11 DONE 0.0s
+2025-08-18T01:16:21.3568681Z 
+2025-08-18T01:16:21.3569099Z #12 [builder 4/6] RUN npm ci && npm cache clean --force
+2025-08-18T01:16:21.5808043Z #12 ...
+2025-08-18T01:16:21.5812763Z 
+2025-08-18T01:16:21.5813643Z #13 [production 2/8] RUN apk add --no-cache curl
+2025-08-18T01:16:21.5814974Z #13 0.164 fetch https://dl-cdn.alpinelinux.org/alpine/v3.22/main/x86_64/APKINDEX.tar.gz
+2025-08-18T01:16:21.5816398Z #13 0.335 fetch https://dl-cdn.alpinelinux.org/alpine/v3.22/community/x86_64/APKINDEX.tar.gz
+2025-08-18T01:16:21.5817156Z #13 0.712 OK: 49 MiB in 70 packages
+2025-08-18T01:16:21.5817568Z #13 DONE 0.8s
+2025-08-18T01:16:21.5934146Z 
+2025-08-18T01:16:21.5935886Z #14 [production 3/8] RUN if ! getent group nginx > /dev/null 2>&1; then         addgroup -g 1001 -S nginx;     fi &&     if ! getent passwd nginx > /dev/null 2>&1; then         adduser -S nginx -u 1001 -G nginx;     fi
+2025-08-18T01:16:21.5937040Z #14 DONE 0.2s
+2025-08-18T01:16:21.5937228Z 
+2025-08-18T01:16:21.5937432Z #12 [builder 4/6] RUN npm ci && npm cache clean --force
+2025-08-18T01:16:24.7626049Z #12 3.554 npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+2025-08-18T01:16:24.9966936Z #12 3.788 npm warn deprecated npmlog@6.0.2: This package is no longer supported.
+2025-08-18T01:16:25.5810030Z #12 4.373 npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+2025-08-18T01:16:25.8447186Z #12 4.636 npm warn deprecated gauge@4.0.4: This package is no longer supported.
+2025-08-18T01:16:26.3455522Z #12 5.137 npm warn deprecated are-we-there-yet@3.0.1: This package is no longer supported.
+2025-08-18T01:16:27.0984879Z #12 5.890 npm warn deprecated @npmcli/move-file@1.1.2: This functionality has been moved to @npmcli/fs
+2025-08-18T01:16:27.7484198Z #12 6.540 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+2025-08-18T01:16:27.9487479Z #12 6.590 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+2025-08-18T01:16:28.0592256Z #12 6.851 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+2025-08-18T01:16:31.9978785Z #12 10.79 
+2025-08-18T01:16:31.9979514Z #12 10.79 added 864 packages, and audited 865 packages in 11s
+2025-08-18T01:16:31.9980078Z #12 10.79 
+2025-08-18T01:16:32.1482607Z #12 10.79 198 packages are looking for funding
+2025-08-18T01:16:32.1483132Z #12 10.79   run `npm fund` for details
+2025-08-18T01:16:32.1483366Z #12 10.79 
+2025-08-18T01:16:32.1483550Z #12 10.79 found 0 vulnerabilities
+2025-08-18T01:16:32.1483775Z #12 10.79 npm notice
+2025-08-18T01:16:32.1484110Z #12 10.79 npm notice New major version of npm available! 10.8.2 -> 11.5.2
+2025-08-18T01:16:32.1484610Z #12 10.79 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.5.2
+2025-08-18T01:16:32.1485199Z #12 10.79 npm notice To update run: npm install -g npm@11.5.2
+2025-08-18T01:16:32.1485517Z #12 10.79 npm notice
+2025-08-18T01:16:32.1485796Z #12 10.94 npm warn using --force Recommended protections disabled.
+2025-08-18T01:16:33.1231130Z #12 DONE 11.9s
+2025-08-18T01:16:33.3139628Z 
+2025-08-18T01:16:33.3140139Z #15 [builder 5/6] COPY . .
+2025-08-18T01:16:33.3140580Z #15 DONE 0.0s
+2025-08-18T01:16:33.3140771Z 
+2025-08-18T01:16:33.3140918Z #16 [builder 6/6] RUN npm run build
+2025-08-18T01:16:33.4166294Z #16 0.253 
+2025-08-18T01:16:33.4166593Z #16 0.253 > blog-system@0.0.0 build
+2025-08-18T01:16:33.4166877Z #16 0.253 > tsc -b && vite build
+2025-08-18T01:16:33.4167096Z #16 0.253 
+2025-08-18T01:16:41.4539287Z #16 8.291 /app/node_modules/rollup/dist/native.js:64
+2025-08-18T01:16:41.4539902Z #16 8.291 		throw new Error(
+2025-08-18T01:16:41.4540229Z #16 8.291 		      ^
+2025-08-18T01:16:41.4540489Z #16 8.291 
+2025-08-18T01:16:41.4541891Z #16 8.291 Error: Cannot find module @rollup/rollup-linux-x64-musl. npm has a bug related to optional dependencies (https://github.com/npm/cli/issues/4828). Please try `npm i` again after removing both package-lock.json and node_modules directory.
+2025-08-18T01:16:41.4544036Z #16 8.291     at requireWithFriendlyError (/app/node_modules/rollup/dist/native.js:64:9)
+2025-08-18T01:16:41.4544869Z #16 8.291     at Object.<anonymous> (/app/node_modules/rollup/dist/native.js:73:76)
+2025-08-18T01:16:41.4545511Z #16 8.291     ... 3 lines matching cause stack trace ...
+2025-08-18T01:16:41.4546315Z #16 8.291     at Module._load (node:internal/modules/cjs/loader:1096:12)
+2025-08-18T01:16:41.4546954Z #16 8.291     at cjsLoader (node:internal/modules/esm/translators:298:15)
+2025-08-18T01:16:41.4547650Z #16 8.291     at ModuleWrap.<anonymous> (node:internal/modules/esm/translators:240:7)
+2025-08-18T01:16:41.4548370Z #16 8.291     at ModuleJob.run (node:internal/modules/esm/module_job:263:25)
+2025-08-18T01:16:41.4549319Z #16 8.291     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24) {
+2025-08-18T01:16:41.4550066Z #16 8.291   [cause]: Error: Cannot find module '@rollup/rollup-linux-x64-musl'
+2025-08-18T01:16:41.4550605Z #16 8.291   Require stack:
+2025-08-18T01:16:41.4551007Z #16 8.291   - /app/node_modules/rollup/dist/native.js
+2025-08-18T01:16:41.4551621Z #16 8.291       at Module._resolveFilename (node:internal/modules/cjs/loader:1212:15)
+2025-08-18T01:16:41.4552309Z #16 8.291       at Module._load (node:internal/modules/cjs/loader:1043:27)
+2025-08-18T01:16:41.4552941Z #16 8.291       at Module.require (node:internal/modules/cjs/loader:1298:19)
+2025-08-18T01:16:41.4553542Z #16 8.291       at require (node:internal/modules/helpers:182:18)
+2025-08-18T01:16:41.4554260Z #16 8.291       at requireWithFriendlyError (/app/node_modules/rollup/dist/native.js:46:10)
+2025-08-18T01:16:41.4555107Z #16 8.291       at Object.<anonymous> (/app/node_modules/rollup/dist/native.js:73:76)
+2025-08-18T01:16:41.4555803Z #16 8.291       at Module._compile (node:internal/modules/cjs/loader:1529:14)
+2025-08-18T01:16:41.4556486Z #16 8.291       at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+2025-08-18T01:16:41.4557158Z #16 8.291       at Module.load (node:internal/modules/cjs/loader:1275:32)
+2025-08-18T01:16:41.4557771Z #16 8.291       at Module._load (node:internal/modules/cjs/loader:1096:12) {
+2025-08-18T01:16:41.4558287Z #16 8.291     code: 'MODULE_NOT_FOUND',
+2025-08-18T01:16:41.4558787Z #16 8.291     requireStack: [ '/app/node_modules/rollup/dist/native.js' ]
+2025-08-18T01:16:41.4559434Z #16 8.291   }
+2025-08-18T01:16:41.4559681Z #16 8.291 }
+2025-08-18T01:16:41.4559936Z #16 8.291 
+2025-08-18T01:16:41.4560122Z #16 8.291 Node.js v20.19.4
+2025-08-18T01:16:41.6362558Z #16 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2025-08-18T01:16:41.6600447Z ------
+2025-08-18T01:16:41.6600889Z  > [builder 6/6] RUN npm run build:
+2025-08-18T01:16:41.6601467Z 8.291       at Module._compile (node:internal/modules/cjs/loader:1529:14)
+2025-08-18T01:16:41.6602178Z 8.291       at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+2025-08-18T01:16:41.6602877Z 8.291       at Module.load (node:internal/modules/cjs/loader:1275:32)
+2025-08-18T01:16:41.6603549Z 8.291       at Module._load (node:internal/modules/cjs/loader:1096:12) {
+2025-08-18T01:16:41.6604047Z 8.291     code: 'MODULE_NOT_FOUND',
+2025-08-18T01:16:41.6604462Z 8.291     requireStack: [ '/app/node_modules/rollup/dist/native.js' ]
+2025-08-18T01:16:41.6605035Z 8.291   }
+2025-08-18T01:16:41.6605321Z 8.291 }
+2025-08-18T01:16:41.6605594Z 8.291 
+2025-08-18T01:16:41.6605895Z 8.291 Node.js v20.19.4
+2025-08-18T01:16:41.6606227Z ------
+2025-08-18T01:16:41.6651985Z Dockerfile.frontend:20
+2025-08-18T01:16:41.6652403Z --------------------
+2025-08-18T01:16:41.6652699Z   18 |     
+2025-08-18T01:16:41.6653230Z   19 |     # 构建应用
+2025-08-18T01:16:41.6653521Z   20 | >>> RUN npm run build
+2025-08-18T01:16:41.6653848Z   21 |     
+2025-08-18T01:16:41.6654146Z   22 |     # 生产阶段
+2025-08-18T01:16:41.6654424Z --------------------
+2025-08-18T01:16:41.6655091Z ERROR: failed to build: failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2025-08-18T01:16:41.6706478Z ##[error]Process completed with exit code 1.

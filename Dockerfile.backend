@@ -1,0 +1,70 @@
+# 后端应用 Dockerfile
+# 使用多阶段构建优化镜像大小
+
+# 构建阶段
+FROM node:20-alpine AS builder
+
+# 设置工作目录
+WORKDIR /app
+
+# 复制package文件
+COPY package*.json ./
+
+# 安装所有依赖（包括devDependencies用于构建）
+RUN npm ci && npm cache clean --force
+
+# 复制源代码
+COPY . .
+
+# 构建TypeScript代码
+RUN npx tsc --project api/tsconfig.json
+
+# 生产阶段
+FROM node:20-alpine AS production
+
+# 安装必要的工具和安全更新
+RUN apk add --no-cache \
+    dumb-init \
+    curl \
+    && apk upgrade --no-cache
+
+# 创建应用用户（如果不存在）
+RUN if ! getent group nodejs > /dev/null 2>&1; then \
+        addgroup -g 1001 -S nodejs; \
+    fi && \
+    if ! getent passwd nodejs > /dev/null 2>&1; then \
+        adduser -S nodejs -u 1001 -G nodejs; \
+    fi
+
+# 设置工作目录
+WORKDIR /app
+
+# 复制package文件
+COPY package*.json ./
+
+# 安装生产依赖（使用--omit=dev以确保overrides生效）
+RUN npm ci --omit=dev && npm cache clean --force
+
+# 复制构建产物
+COPY --from=builder /app/api/dist ./api/dist
+COPY --from=builder /app/api/database ./api/database
+
+# 创建必要的目录
+RUN mkdir -p logs uploads backups && \
+    chown -R nodejs:nodejs /app
+
+# 切换到非root用户
+USER nodejs
+
+# 暴露端口
+EXPOSE 3001
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:3001/api/health || exit 1
+
+# 使用dumb-init作为PID 1
+ENTRYPOINT ["dumb-init", "--"]
+
+# 启动应用
+CMD ["node", "api/dist/index.js"]
